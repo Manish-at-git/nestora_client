@@ -129,7 +129,7 @@ export const PublishReportModal: React.FC<PublishReportModalProps> = ({
       <div className="space-y-4">
         {/* Association Selection */}
         <FormField
-          label="Target Association"
+          label="Association"
           required
           error={errors.associationId}
         >

@@ -29,7 +29,7 @@ export const CodeInput: React.FC<CodeInputProps> = ({
   const notify = (arr: string[]) => onChange && onChange(arr.join(""));
 
   const handleChange = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9\-!@#$%^&*]/g, "");
+    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const next = [...chars];
     if (v.length <= 1) {
       next[i] = v;
@@ -58,7 +58,7 @@ export const CodeInput: React.FC<CodeInputProps> = ({
     e.preventDefault();
     const paste = (e.clipboardData.getData("text") || "")
       .toUpperCase()
-      .replace(/[^A-Z0-9\-!@#$%^&*]/g, "")
+      .replace(/[^A-Z0-9]/g, "")
       .slice(0, length);
     const next = Array.from({ length }, (_, i) => paste[i] || "");
     setChars(next);
@@ -69,7 +69,7 @@ export const CodeInput: React.FC<CodeInputProps> = ({
 
   return (
     <div
-      className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2 flex-nowrap max-w-full py-1"
+      className="flex w-full items-center gap-1 sm:gap-2 flex-nowrap py-1"
       data-testid="access-code-input-group"
       onPaste={handlePaste}
     >

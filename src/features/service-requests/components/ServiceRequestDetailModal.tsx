@@ -238,7 +238,7 @@ export const ServiceRequestDetailModal: React.FC<ServiceRequestDetailModalProps>
                     </Button>
                   )}
 
-                  {statusKey !== "cancelled" && (
+                  {statusKey !== "cancelled" && statusKey !== "completed" && (
                     <Button
                       variant="outline"
                       className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/50"

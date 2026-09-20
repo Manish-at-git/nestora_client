@@ -250,7 +250,7 @@ export const ServiceRequestDetailView: React.FC<ServiceRequestDetailViewProps> =
                 </Button>
               )}
 
-              {statusKey !== "cancelled" && (
+              {statusKey !== "cancelled" && statusKey !== "completed" && (
                 <Button
                   variant="outline"
                   onClick={() => handleStatusChange("cancelled")}

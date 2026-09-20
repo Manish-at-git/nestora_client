@@ -120,8 +120,8 @@ const LoginTab: React.FC<{ navigate: (to: string) => void }> = ({ navigate }) =>
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
-    if (code.length < 4) {
-      setErr("Please enter your full access code.");
+    if (code.length !== 8) {
+      setErr("Please enter your 8-character access code.");
       return;
     }
     try {
@@ -145,9 +145,9 @@ const LoginTab: React.FC<{ navigate: (to: string) => void }> = ({ navigate }) =>
       <label className="block uppercase tracking-[0.22em] text-[11px] text-muted mb-4">
         Access code
       </label>
-      <CodeInput length={10} value={code} onChange={setCode} />
+      <CodeInput length={8} value={code} onChange={setCode} />
       <p className="mt-3 font-mono text-xs text-muted">
-        Hint · try <span className="text-moss font-semibold">NST-DEMO1</span>, DEMO2 or DEMO3
+        Enter the 8-character code shared during onboarding.
       </p>
 
       {err && (

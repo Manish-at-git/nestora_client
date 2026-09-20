@@ -13,6 +13,7 @@ import {
   Calculator,
 } from "lucide-react";
 import apiClient, { formatApiErrorDetail } from "@/services/api/apiClient";
+import { unwrapApiData } from "@/services/api/response";
 
 export interface OnboardAssociationModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [contractPreviewUrl, setContractPreviewUrl] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isAnalyzingWorkbook, setIsAnalyzingWorkbook] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -74,7 +76,7 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
     });
   };
 
-  const handleCsvChange = (file: File | null, url: string) => {
+  const handleCsvChange = async (file: File | null, url: string) => {
     setCsvFile(file);
     setCsvPreviewUrl(url);
     setErrors((prev) => {
@@ -83,6 +85,28 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
       delete next.csvFile;
       return next;
     });
+
+    if (!file) return;
+    try {
+      setIsAnalyzingWorkbook(true);
+      const workbook = new FormData();
+      workbook.append("csv_file", file);
+      const response = await apiClient.post("/admin/associations/onboard/preview", workbook, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const metrics = unwrapApiData(response.data as { data: {
+        num_blocks: number;
+        floors_per_block: number;
+        units_per_floor: number;
+      } });
+      setNumBlocks(String(metrics.num_blocks || ""));
+      setFloorsPerBlock(String(metrics.floors_per_block || ""));
+      setUnitsPerFloor(String(metrics.units_per_floor || ""));
+    } catch (err: any) {
+      toast.error(formatApiErrorDetail(err?.response?.data || "Could not read Unit Details from this workbook."));
+    } finally {
+      setIsAnalyzingWorkbook(false);
+    }
   };
 
   const validate = () => {
@@ -133,6 +157,7 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
     setContractFile(null);
     setContractPreviewUrl("");
     setErrors({});
+    setIsAnalyzingWorkbook(false);
     onClose();
   };
 
@@ -191,6 +216,59 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
             size="sm"
           />
         </FormField>
+
+        {/* Bulk Upload Excel (.xlsx) using FileUploadZone within FormField */}
+        <div className="pt-1 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-semibold text-slate-700">
+              Bulk Upload Excel (.xlsx) <span className="text-red-500 font-bold">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              disabled={isDownloading}
+              className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-semibold hover:underline cursor-pointer disabled:opacity-50"
+            >
+              <Download size={13} />
+              <span>Download Template</span>
+            </button>
+          </div>
+
+          <FormField
+            label=""
+            error={errors.csvFile}
+          >
+            <FileUploadZone
+              value={csvPreviewUrl}
+              onChange={(url) => {
+                // FileUploadZone calls onChange after onUpload with the preview
+                // URL. Keep the File object for FormData submission; clear it
+                // only when the user removes the uploaded file.
+                setCsvPreviewUrl(url);
+                if (!url) setCsvFile(null);
+                setErrors((prev) => {
+                  if (!prev.csvFile) return prev;
+                  const next = { ...prev };
+                  delete next.csvFile;
+                  return next;
+                });
+              }}
+              onUpload={async (file) => {
+                const preview = URL.createObjectURL(file);
+                void handleCsvChange(file, preview);
+                return preview;
+              }}
+              accept=".xlsx,.xls,.csv"
+              label="Upload completed Excel sheet (.xlsx, .xls, .csv)"
+              helperText="Drag & drop or click to upload completed onboarding template"
+              disabled={isOnboarding}
+              error={Boolean(errors.csvFile)}
+            />
+            {isAnalyzingWorkbook && (
+              <p className="text-xs text-slate-500">Reading Unit Details to fill the building fields...</p>
+            )}
+          </FormField>
+        </div>
 
         {/* 3-Column Grid: Number of Blocks, Floors per Block, Units per Floor */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -264,55 +342,6 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
           </FormField>
         </div>
 
-        {/* Bulk Upload Excel (.xlsx) using FileUploadZone within FormField */}
-        <div className="pt-1 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-slate-700">
-              Bulk Upload Excel (.xlsx) <span className="text-red-500 font-bold">*</span>
-            </label>
-            <button
-              type="button"
-              onClick={handleDownloadTemplate}
-              disabled={isDownloading}
-              className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-semibold hover:underline cursor-pointer disabled:opacity-50"
-            >
-              <Download size={13} />
-              <span>Download Template</span>
-            </button>
-          </div>
-
-          <FormField
-            label=""
-            error={errors.csvFile}
-          >
-            <FileUploadZone
-              value={csvPreviewUrl}
-              onChange={(url) => {
-                // FileUploadZone calls onChange after onUpload with the preview
-                // URL. Keep the File object for FormData submission; clear it
-                // only when the user removes the uploaded file.
-                setCsvPreviewUrl(url);
-                if (!url) setCsvFile(null);
-                setErrors((prev) => {
-                  if (!prev.csvFile) return prev;
-                  const next = { ...prev };
-                  delete next.csvFile;
-                  return next;
-                });
-              }}
-              onUpload={async (file) => {
-                const preview = URL.createObjectURL(file);
-                handleCsvChange(file, preview);
-                return preview;
-              }}
-              accept=".xlsx,.xls,.csv"
-              label="Upload completed Excel sheet (.xlsx, .xls, .csv)"
-              helperText="Drag & drop or click to upload completed onboarding template"
-              disabled={isOnboarding}
-              error={Boolean(errors.csvFile)}
-            />
-          </FormField>
-        </div>
       </div>
     </FormModal>
   );

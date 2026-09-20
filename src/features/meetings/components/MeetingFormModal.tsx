@@ -38,6 +38,12 @@ import {
 } from "../schemas";
 import type { Meeting } from "../types";
 
+const normalizeMeetingTime = (value?: string | null) => {
+  if (!value) return "";
+  const match = String(value).match(/^(\d{1,2}:\d{2})/);
+  return match?.[1] || "";
+};
+
 export interface MeetingFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -171,7 +177,7 @@ export const MeetingFormModal: React.FC<MeetingFormModalProps> = ({
           meeting_date: meetingToEdit.meeting_date
             ? meetingToEdit.meeting_date.split("T")[0]
             : "",
-          meeting_time: meetingToEdit.meeting_time || "",
+          meeting_time: normalizeMeetingTime(meetingToEdit.meeting_time),
           duration: meetingToEdit.duration || "",
           venue: meetingToEdit.venue || "",
           meeting_link: meetingToEdit.meeting_link || "",

@@ -83,7 +83,7 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
 
   const isCompleted = meeting.status === "Completed";
   const locked = isRSVPLocked(meeting.meeting_date, meeting.meeting_time);
-  const editable = canEdit(meeting.created_at);
+  const editable = canEdit(meeting.created_at) && !locked;
 
   const priorityStyles: Record<string, string> = {
     High: "bg-rose-50 text-rose-700 border-rose-200",

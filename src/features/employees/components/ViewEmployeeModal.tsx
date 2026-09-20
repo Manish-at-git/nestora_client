@@ -92,20 +92,26 @@ export const ViewEmployeeModal: React.FC<ViewEmployeeModalProps> = ({
       }
     >
       <div className="space-y-4">
-        {/* Credentials Card (if raw password available) */}
-        {activeEmployee.raw_password && (
-          <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Key size={16} className="text-amber-600" />
-              <span className="text-xs font-semibold text-amber-900">
-                Temp Login Password:
-              </span>
+        {/* Credentials Card */}
+        <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Key size={16} className="text-amber-600" />
+            <span className="text-xs font-semibold text-amber-900">
+              {activeEmployee.temp_password
+                ? "Temp Login Password:"
+                : "Password status:"}
+            </span>
+            {activeEmployee.temp_password ? (
               <span className="text-xs font-mono font-bold text-amber-950 bg-white px-2 py-0.5 rounded border border-amber-200">
-                {activeEmployee.raw_password}
+                {activeEmployee.temp_password}
               </span>
-            </div>
+            ) : (
+              <span className="text-xs font-semibold text-amber-950 bg-white px-2 py-0.5 rounded border border-amber-200">
+                Password reset
+              </span>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Contact Details Grid */}
         <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/60">

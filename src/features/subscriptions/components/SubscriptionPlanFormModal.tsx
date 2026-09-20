@@ -311,7 +311,7 @@ export const SubscriptionPlanFormModal: React.FC<SubscriptionPlanFormModalProps>
         {/* Description */}
         <FormField
           label="Plan Description"
-          helperText="Key highlights or target association size"
+          helperText="Key highlights or association size"
         >
           <Textarea
             rows={2}

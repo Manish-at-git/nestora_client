@@ -70,6 +70,21 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         },
       },
       {
+        key: "temp_password",
+        header: "Temp Password",
+        sortable: false,
+        filterable: false,
+        width: "150px",
+        render: (row) =>
+          row.temp_password ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold bg-amber-50 text-amber-900 border border-amber-200">
+              {row.temp_password}
+            </span>
+          ) : (
+            <span className="text-xs text-slate-400">—</span>
+          ),
+      },
+      {
         key: "email",
         header: "Email",
         sortable: true,

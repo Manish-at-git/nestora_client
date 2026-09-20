@@ -68,6 +68,7 @@ export interface EventFormData {
   registration_deadline?: string;
   max_capacity?: number;
   audience?: string;
+  send_notifications?: boolean;
   banner_url?: string;
   organizer_name?: string;
   organizer_contact?: string;

@@ -308,7 +308,7 @@ export const PollFormModal: React.FC<PollFormModalProps> = ({
           {/* Admins choose an association; member roles are locked to their own. */}
           {showAssociationSelector && (
             <FormField
-              label="Target Association"
+              label="Association"
               required
               error={getFieldError("association_id")}
             >

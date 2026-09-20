@@ -24,7 +24,7 @@ export interface Employee {
   emergency_contact_name?: string;
   emergency_contact_number?: string;
   id_proof_url?: string;
-  raw_password?: string;
+  temp_password?: string | null;
   associations?: EmployeeAssociation[];
   created_at?: string;
 }

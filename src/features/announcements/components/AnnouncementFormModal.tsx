@@ -226,7 +226,7 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
         {/* Admins choose an association; member roles are locked to their own. */}
         {showAssociationSelector && (
           <FormField
-            label="Target Association"
+            label="Association"
             required
             error={getFieldError("association_id")}
           >

@@ -351,7 +351,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           {/* Admins choose an association; member roles are locked to their own. */}
           {showAssociationSelector && (
             <FormField
-              label="Target Association"
+              label="Association"
               required
               error={getFieldError("association_id")}
             >

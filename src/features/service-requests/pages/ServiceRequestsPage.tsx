@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import { AccessRestricted, EmptyState, LoadingSpinner } from "@/components/common";
-import { isAdmin, isBoardMember, isSuperAdmin, isHomeowner } from "@/lib/utils";
+import { isAdmin, isSuperAdmin, isHomeowner } from "@/lib/utils";
 import { useAppSelector } from "@/app/hooks";
 import { useGetAdminAssociationsQuery } from "@/services/api/associationsApi";
 import {
@@ -54,7 +54,7 @@ export const ServiceRequestsPage: React.FC<ServiceRequestsPageProps> = ({
   });
 
   const { account } = useAuth();
-  const { canCreate, canUpdate, canView, isLoading: isPermLoading } =
+  const { canCreate, canView, isLoading: isPermLoading } =
     usePermission("service_requests");
 
   const [activeTab, setActiveTab] = useState<ServiceStatusTabKey>("all");
@@ -72,8 +72,7 @@ export const ServiceRequestsPage: React.FC<ServiceRequestsPageProps> = ({
 
   const userRole = account?.role_code;
   const userIsAdmin = isAdmin(userRole) || isSuperAdmin(userRole);
-  const userIsBoard = isBoardMember(userRole);
-  const canManageStatus = userIsAdmin || userIsBoard || canUpdate;
+  const canManageStatus = userIsAdmin;
 
   // Fallback load admin associations
   const { data: fetchedAssocs = [], isFetching: isAssocsLoading } =

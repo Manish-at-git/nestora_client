@@ -248,7 +248,7 @@ export const CommitteeFormModal: React.FC<CommitteeFormModalProps> = ({
       <div className="space-y-4 py-1">
         {/* Association Selector */}
         <FormField
-          label="Target Association"
+          label="Association"
           required
           error={getFieldError("association_id")}
         >

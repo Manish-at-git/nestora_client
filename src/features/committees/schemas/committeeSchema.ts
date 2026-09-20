@@ -26,9 +26,9 @@ export const assignedMemberSchema = z
 export const committeeSchema = z
   .object({
     association_id: z
-      .string({ required_error: "Target association is required" })
+      .string({ required_error: "association is required" })
       .trim()
-      .min(1, "Target association is required"),
+      .min(1, "association is required"),
     name: z
       .string({ required_error: "Committee name is required" })
       .trim()

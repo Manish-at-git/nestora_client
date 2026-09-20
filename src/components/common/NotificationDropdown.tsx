@@ -123,18 +123,21 @@ export const NotificationDropdown: React.FC = () => {
 
   const handleNotificationClick = async (notification: NotificationItem) => {
     const markedRead = await handleMarkAsRead(notification.id, notification.is_read);
-    if (!markedRead || !isInternalActionUrl(notification.action_url)) {
+    const actionUrl = getNotificationActionUrl(notification);
+    if (!markedRead || !actionUrl) {
       return;
     }
     setIsOpen(false);
-    navigate(notification.action_url);
+    navigate(actionUrl);
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
+
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600 active:scale-95 cursor-pointer"
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
         title="Notifications"
         aria-label="Notifications"
       >
@@ -194,27 +197,24 @@ export const NotificationDropdown: React.FC = () => {
                     type="button"
                     onClick={() => void handleNotificationClick(n)}
                     style={{ animationDelay: `${Math.min(index * 35, 210)}ms` }}
-                    className={`group relative flex w-full items-start gap-2.5 border-b border-slate-100 px-3.5 py-2.5 text-left transition-all duration-200 motion-reduce:animate-none animate-in fade-in slide-in-from-right-2 ${
-                      isUnread
+                    className={`group relative flex w-full items-start gap-2.5 border-b border-slate-100 px-3.5 py-2.5 text-left transition-all duration-200 motion-reduce:animate-none animate-in fade-in slide-in-from-right-2 ${isUnread
                         ? "border-l-2 border-l-indigo-500 bg-gradient-to-r from-indigo-50 via-indigo-50/60 to-white hover:from-indigo-100 hover:to-indigo-50"
                         : "border-l-2 border-l-transparent hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-200 ${
-                        isUnread
+                      className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-200 ${isUnread
                           ? "bg-indigo-500 shadow-sm shadow-indigo-400"
                           : "bg-slate-200"
-                      }`}
+                        }`}
                     />
                     <div className="min-w-0 flex-1">
                       {n.title && (
                         <h4
-                          className={`truncate text-xs ${
-                            isUnread
+                          className={`truncate text-xs ${isUnread
                               ? "font-bold text-slate-900"
                               : "font-semibold text-slate-700"
-                          }`}
+                            }`}
                         >
                           {n.title}
                         </h4>
@@ -234,7 +234,7 @@ export const NotificationDropdown: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    {n.action_url ? (
+                    {getNotificationActionUrl(n) ? (
                       <ChevronRight
                         size={15}
                         className="mt-2 shrink-0 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-indigo-500"
@@ -264,5 +264,21 @@ export const NotificationDropdown: React.FC = () => {
 
 const isInternalActionUrl = (actionUrl?: string): actionUrl is string =>
   Boolean(actionUrl && actionUrl.startsWith("/") && !actionUrl.startsWith("//"));
+
+const getNotificationActionUrl = (notification: NotificationItem): string | null => {
+  if (notification.entity_id === undefined || notification.entity_id === null) {
+    return isInternalActionUrl(notification.action_url) ? notification.action_url : null;
+  }
+
+  const entityId = encodeURIComponent(String(notification.entity_id));
+  if (notification.entity_type === "service_request") {
+    return `/service-requests/${entityId}`;
+  }
+  if (notification.entity_type === "board_task") {
+    return `/board-tasks/${entityId}`;
+  }
+
+  return isInternalActionUrl(notification.action_url) ? notification.action_url : null;
+};
 
 export default NotificationDropdown;
