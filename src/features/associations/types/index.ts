@@ -6,6 +6,7 @@ export interface Association {
   entity_name?: string | null;
   address_line_1?: string | null;
   address_line_2?: string | null;
+  city_id?: string | null;
   city?: string | null;
   state?: string | null;
   pincode?: string | null;

@@ -16,6 +16,7 @@ export interface Employee {
   address?: string;
   address_line_1?: string;
   address_line_2?: string;
+  city_id?: string;
   city?: string;
   state?: string;
   pincode?: string;
@@ -38,8 +39,7 @@ export interface EmployeeCreatePayload {
   association_ids: string[];
   address_line_1: string;
   address_line_2?: string;
-  city: string;
-  state: string;
+  city_id: string;
   pincode: string;
   emergency_contact_name?: string;
   emergency_contact_number?: string;

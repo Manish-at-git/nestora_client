@@ -20,6 +20,7 @@ export interface Vendor {
   whatsapp_number?: string | null;
   address_line_1?: string | null;
   address_line_2?: string | null;
+  city_id?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;

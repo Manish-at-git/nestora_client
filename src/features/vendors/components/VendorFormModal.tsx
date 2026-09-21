@@ -17,6 +17,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  useGetLocationCitiesQuery,
+  useGetLocationCountriesQuery,
+  useGetLocationRegionsQuery,
+} from "@/features/locations/api/locationsApi";
 import { useCreateVendorMutation, useUpdateVendorMutation } from "../api/vendorsApi";
 import { useGetAssociationsQuery } from "@/features/associations/api";
 import type { Vendor } from "../types";
@@ -89,6 +94,17 @@ export const VendorFormModal: React.FC<VendorFormModalProps> = ({
 
   // Core Form State
   const [formData, setFormData] = useState<Partial<Vendor>>({});
+  const [countryId, setCountryId] = useState("");
+  const [regionId, setRegionId] = useState("");
+  const { data: countries = [], isLoading: isLoadingCountries } = useGetLocationCountriesQuery(undefined, {
+    skip: !isOpen,
+  });
+  const { data: regions = [], isLoading: isLoadingRegions } = useGetLocationRegionsQuery(countryId, {
+    skip: !isOpen || !countryId,
+  });
+  const { data: cities = [], isLoading: isLoadingCities } = useGetLocationCitiesQuery(regionId, {
+    skip: !isOpen || !regionId,
+  });
 
   // Dynamic Contacts
   const [contacts, setContacts] = useState<ContactPersonItem[]>([
@@ -214,7 +230,6 @@ export const VendorFormModal: React.FC<VendorFormModalProps> = ({
         setFormData({
           status: "Active",
           vendor_code: "",
-          country: "India",
           vendor_rating: 4.5,
         });
         setContacts([{ name: "", role: "Owner", mobile: "" }]);
@@ -230,6 +245,8 @@ export const VendorFormModal: React.FC<VendorFormModalProps> = ({
         ]);
       }
       setCurrentStep(1);
+      setCountryId("");
+      setRegionId("");
       setErrors({});
     }
   }, [vendorToEdit, isOpen]);
@@ -563,37 +580,18 @@ export const VendorFormModal: React.FC<VendorFormModalProps> = ({
                 </FormField>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <FormField label="City">
-                  <Input
-                    type="text"
-                    placeholder="e.g. Mumbai"
-                    value={formData.city || ""}
-                    onChange={(e) => handleFieldChange("city", e.target.value)}
-                    disabled={isSaving}
-                  />
-                </FormField>
-
-                <FormField label="State">
-                  <Input
-                    type="text"
-                    placeholder="e.g. Maharashtra"
-                    value={formData.state || ""}
-                    onChange={(e) => handleFieldChange("state", e.target.value)}
-                    disabled={isSaving}
-                  />
-                </FormField>
-
-                <FormField label="Country">
-                  <Input
-                    type="text"
-                    placeholder="e.g. India"
-                    value={formData.country || ""}
-                    onChange={(e) => handleFieldChange("country", e.target.value)}
-                    disabled={isSaving}
-                  />
-                </FormField>
-
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <FormField label="Country" error={errors.country_id}>
+                    <Select value={countryId} onValueChange={(value) => { setCountryId(value); setRegionId(""); handleFieldChange("city_id", ""); }} options={countries.map((country) => ({ value: country.id, label: country.name }))} placeholder="Select country..." disabled={isSaving || isLoadingCountries} error={Boolean(errors.country_id)} />
+                  </FormField>
+                  <FormField label="State / Region" error={errors.region_id}>
+                    <Select value={regionId} onValueChange={(value) => { setRegionId(value); handleFieldChange("city_id", ""); }} options={regions.map((region) => ({ value: region.id, label: region.name }))} placeholder="Select state..." disabled={isSaving || !countryId || isLoadingRegions} error={Boolean(errors.region_id)} />
+                  </FormField>
+                  <FormField label="City" error={errors.city_id}>
+                    <Select value={formData.city_id || ""} onValueChange={(value) => handleFieldChange("city_id", value)} options={cities.map((city) => ({ value: city.id, label: city.name }))} placeholder="Select city..." disabled={isSaving || !regionId || isLoadingCities} error={Boolean(errors.city_id)} />
+                  </FormField>
+                </div>
                 <FormField label="ZIP / Postal Code">
                   <Input
                     type="text"

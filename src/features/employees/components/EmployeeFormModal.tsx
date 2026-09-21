@@ -7,6 +7,11 @@ import { FileUploadZone } from "@/components/common/FileUploadZone";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  useGetLocationCitiesQuery,
+  useGetLocationCountriesQuery,
+  useGetLocationRegionsQuery,
+} from "@/features/locations/api/locationsApi";
 import { ROLES_STRING } from "@/lib/staticData";
 import { useGetRolesQuery } from "@/features/roles/api/rolesApi";
 import { useGetAssociationsQuery } from "@/features/associations/api/associationsApi";
@@ -54,8 +59,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
     association_ids: [],
     address_line_1: "",
     address_line_2: "",
-    city: "",
-    state: "",
+    city_id: "",
     pincode: "",
     emergency_contact_name: "",
     emergency_contact_number: "",
@@ -65,6 +69,17 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [countryId, setCountryId] = useState("");
+  const [regionId, setRegionId] = useState("");
+  const { data: countries = [], isLoading: isLoadingCountries } = useGetLocationCountriesQuery(undefined, {
+    skip: !isOpen,
+  });
+  const { data: regions = [], isLoading: isLoadingRegions } = useGetLocationRegionsQuery(countryId, {
+    skip: !isOpen || !countryId,
+  });
+  const { data: cities = [], isLoading: isLoadingCities } = useGetLocationCitiesQuery(regionId, {
+    skip: !isOpen || !regionId,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -79,8 +94,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             employeeToEdit.associations?.map((a) => a.id) || [],
           address_line_1: employeeToEdit.address_line_1 || "",
           address_line_2: employeeToEdit.address_line_2 || "",
-          city: employeeToEdit.city || "",
-          state: employeeToEdit.state || "",
+          city_id: employeeToEdit.city_id || "",
           pincode: employeeToEdit.pincode || "",
           emergency_contact_name: employeeToEdit.emergency_contact_name || "",
           emergency_contact_number:
@@ -103,8 +117,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           association_ids: [],
           address_line_1: "",
           address_line_2: "",
-          city: "",
-          state: "",
+          city_id: "",
           pincode: "",
           emergency_contact_name: "",
           emergency_contact_number: "",
@@ -113,6 +126,8 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           end_date: "",
         });
       }
+      setCountryId("");
+      setRegionId("");
       setErrors({});
     }
   }, [employeeToEdit, isOpen]);
@@ -162,12 +177,16 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
         setErrors({ address_line_1: "Address is required" });
         return false;
       }
-      if (!formData.city.trim()) {
-        setErrors({ city: "City is required" });
+      if (!countryId) {
+        setErrors({ country_id: "Country is required" });
         return false;
       }
-      if (!formData.state.trim()) {
-        setErrors({ state: "State is required" });
+      if (!regionId) {
+        setErrors({ region_id: "State is required" });
+        return false;
+      }
+      if (!formData.city_id) {
+        setErrors({ city_id: "City is required" });
         return false;
       }
       if (!formData.pincode.trim()) {
@@ -233,8 +252,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           contact_number: formData.contact_number.trim(),
           address_line_1: formData.address_line_1.trim(),
           address_line_2: formData.address_line_2?.trim() || undefined,
-          city: formData.city.trim(),
-          state: formData.state.trim(),
+          city_id: formData.city_id,
           pincode: formData.pincode.trim(),
           onboard_date: formData.onboard_date || undefined,
           end_date: formData.end_date || undefined,
@@ -507,29 +525,18 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                   </FormField>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <FormField label="City" required error={errors.city}>
-                  <Input
-                    type="text"
-                    placeholder="e.g. Mumbai"
-                    value={formData.city}
-                    onChange={(e) => handleFieldChange("city", e.target.value)}
-                    disabled={isSaving}
-                  />
-                </FormField>
-
-                <FormField label="State" required error={errors.state}>
-                  <Input
-                    type="text"
-                    placeholder="e.g. Maharashtra"
-                    value={formData.state}
-                    onChange={(e) =>
-                      handleFieldChange("state", e.target.value)
-                    }
-                    disabled={isSaving}
-                  />
-                </FormField>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField label="Country" required error={errors.country_id}>
+                    <Select value={countryId} onValueChange={(value) => { setCountryId(value); setRegionId(""); handleFieldChange("city_id", ""); }} options={countries.map((country) => ({ value: country.id, label: country.name }))} placeholder="Select country..." disabled={isSaving || isLoadingCountries} error={Boolean(errors.country_id)} />
+                  </FormField>
+                  <FormField label="State / Region" required error={errors.region_id}>
+                    <Select value={regionId} onValueChange={(value) => { setRegionId(value); handleFieldChange("city_id", ""); }} options={regions.map((region) => ({ value: region.id, label: region.name }))} placeholder="Select state..." disabled={isSaving || !countryId || isLoadingRegions} error={Boolean(errors.region_id)} />
+                  </FormField>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                 <FormField label="City" required error={errors.city_id}>
+                    <Select value={formData.city_id} onValueChange={(value) => handleFieldChange("city_id", value)} options={cities.map((city) => ({ value: city.id, label: city.name }))} placeholder="Select city..." disabled={isSaving || !regionId || isLoadingCities} error={Boolean(errors.city_id)} />
+                  </FormField>
                 <FormField label="Pincode" required error={errors.pincode}>
                   <Input
                     type="text"

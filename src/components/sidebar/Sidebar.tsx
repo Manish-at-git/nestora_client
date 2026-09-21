@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
@@ -31,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const mobileSidebarOpen = useAppSelector((state) => state.ui.mobileSidebarOpen);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
+  const pageScrollPosition = useRef(0);
 
   // Auto-close mobile sidebar whenever route changes
   useEffect(() => {
@@ -47,6 +48,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileSidebarOpen, dispatch]);
+
+  // Lock the page behind the drawer on mobile, including iOS touch scrolling.
+  useEffect(() => {
+    const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
+    if (!mobileSidebarOpen || !isMobileViewport) return;
+
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const previousBodyStyles = {
+      left: body.style.left,
+      overflow: body.style.overflow,
+      position: body.style.position,
+      right: body.style.right,
+      top: body.style.top,
+    };
+    pageScrollPosition.current = scrollY;
+
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.overflow = "hidden";
+
+    return () => {
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.left = previousBodyStyles.left;
+      body.style.right = previousBodyStyles.right;
+      body.style.overflow = previousBodyStyles.overflow;
+      window.scrollTo(0, pageScrollPosition.current);
+    };
+  }, [mobileSidebarOpen]);
 
   const toggleMenu = (key: string, currentExpandedState: boolean) => {
     setExpandedMenus((prev) => ({
@@ -129,10 +162,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           tabIndex={0}
           aria-label="Close navigation drawer"
           onClick={() => dispatch(closeMobileSidebar())}
+          onTouchMove={(e) => e.preventDefault()}
           onKeyDown={(e) => {
             if (e.key === "Escape" || e.key === "Enter") dispatch(closeMobileSidebar());
           }}
-          className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden cursor-pointer"
+          className="fixed inset-0 z-[60] touch-none bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 lg:hidden cursor-pointer"
         />
       )}
 
@@ -141,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={cn(
           "fixed z-[70] lg:z-30 flex flex-col bg-slate-900 text-white shadow-2xl transition-all duration-300 ease-in-out border border-white/10 select-none",
           // Mobile & Tablet (<1024px): off-canvas drawer
-          "top-0 bottom-0 left-0 h-full w-72 p-5 rounded-r-3xl rounded-l-none",
+          "top-0 bottom-0 left-0 h-full w-72 p-5 rounded-r-3xl rounded-l-none touch-pan-y overscroll-contain",
           mobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
           // Desktop (>=1024px): floating glassmorphic sidebar
           "lg:translate-x-0 lg:top-4 lg:bottom-4 lg:left-4 lg:rounded-3xl lg:h-[calc(100vh-2rem)]",
@@ -156,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
 
         {/* Navigation List */}
-        <nav className="space-y-1.5 text-sm overflow-y-auto flex-1 min-h-0 pr-1 sidebar-scrollbar">
+        <nav className="space-y-1.5 text-sm overflow-y-auto flex-1 min-h-0 pr-1 sidebar-scrollbar touch-pan-y overscroll-contain">
           {navItems.map((it) => {
             const hasChildren = Boolean(it.subItems && it.subItems.length > 0);
             const isChildActive =
@@ -206,4 +240,3 @@ export const Sidebar: React.FC<SidebarProps> = ({
 };
 
 export default Sidebar;
-
