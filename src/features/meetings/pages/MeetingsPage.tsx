@@ -76,7 +76,7 @@ export const MeetingsPage: React.FC<MeetingsPageProps> = ({
   // RTK Query
   const { data: meetings = [], isLoading, refetch } = useGetMeetingsQuery(
     effectiveAssociationId,
-    { skip: !canView }
+    { skip: !canView, refetchOnMountOrArgChange: true },
   );
   const [updateAttendance] = useUpdateMeetingAttendanceMutation();
 

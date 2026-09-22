@@ -886,7 +886,7 @@ export function DataTable<TData extends Record<string, any>>({
                 disabled={!table.getCanPreviousPage()}
                 className={cn(
                   densityStyles.controlHeight,
-                  "w-8.5 h-8.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center transition-colors"
+                  "w-8 h-8 min-h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center transition-colors"
                 )}
                 title="First Page"
               >
@@ -900,7 +900,7 @@ export function DataTable<TData extends Record<string, any>>({
                 disabled={!table.getCanPreviousPage()}
                 className={cn(
                   densityStyles.controlHeight,
-                  "h-8.5 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-1 transition-colors"
+                  "h-8 min-h-8 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-1 transition-colors"
                 )}
               >
                 <ChevronLeft size={14} />
@@ -911,7 +911,7 @@ export function DataTable<TData extends Record<string, any>>({
               <div
                 className={cn(
                   densityStyles.controlHeight,
-                  "h-8.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 inline-flex items-center justify-center select-none"
+                  "h-8 min-h-8 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 inline-flex items-center justify-center select-none"
                 )}
               >
                 Page {pageIndex + 1} of {calculatedPageCount || 1}
@@ -924,7 +924,7 @@ export function DataTable<TData extends Record<string, any>>({
                 disabled={!table.getCanNextPage()}
                 className={cn(
                   densityStyles.controlHeight,
-                  "h-8.5 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-1 transition-colors"
+                  "h-8 min-h-8 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-1 transition-colors"
                 )}
               >
                 <span>Next</span>
@@ -938,7 +938,7 @@ export function DataTable<TData extends Record<string, any>>({
                 disabled={!table.getCanNextPage()}
                 className={cn(
                   densityStyles.controlHeight,
-                  "w-8.5 h-8.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center transition-colors"
+                  "w-8 h-8 min-h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center transition-colors"
                 )}
                 title="Last Page"
               >

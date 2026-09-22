@@ -552,6 +552,7 @@ export const RolePermissionMatrixModal: React.FC<RolePermissionMatrixModalProps>
           key: "sr_no",
           header: "Sr. No.",
           sortable: false,
+          filterable: false,
           width: "56px",
           className: "text-center",
           render: (_row, index) => (
@@ -561,7 +562,7 @@ export const RolePermissionMatrixModal: React.FC<RolePermissionMatrixModalProps>
         {
           key: "feature_name",
           header: "Feature / Module",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "240px",
           render: (row) => {
@@ -589,7 +590,7 @@ export const RolePermissionMatrixModal: React.FC<RolePermissionMatrixModalProps>
         {
           key: "feature_code",
           header: "Code / Route",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "170px",
           render: (row) => (
@@ -609,7 +610,8 @@ export const RolePermissionMatrixModal: React.FC<RolePermissionMatrixModalProps>
         {
           key: "sidebar_order",
           header: "Position",
-          sortable: true,
+          sortable: false,
+          filterable: false,
           width: "82px",
           className: "text-center",
           headerClassName: "text-center",
@@ -735,7 +737,7 @@ export const RolePermissionMatrixModal: React.FC<RolePermissionMatrixModalProps>
       isForm={!readOnly}
       isSubmitting={isSaving}
       submitText={readOnly ? undefined : "Save Permissions"}
-      loadingText="Saving Permissions..."
+      loadingText="Saving Permissions"
       submitVariant="default"
       onSubmit={readOnly ? undefined : handleSubmit}
       customFooter={

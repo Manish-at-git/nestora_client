@@ -41,6 +41,8 @@ import { MotionPage } from "@/components/common/MotionWrapper";
 import { RoleLayout } from "@/layouts";
 import type { NavItem } from "@/types/navigation";
 import { Icon, Icons } from "@/components/icons";
+import { formatApiErrorDetail } from "@/services/api/apiClient";
+import { useGetEmailTemplatePreviewsQuery } from "./api/emailTemplatesApi";
 
 const SAMPLE_NAV_ITEMS: NavItem[] = [
   { key: "overview", label: "Overview", icon: Sparkles },
@@ -117,6 +119,12 @@ export const DesignSystemPage: React.FC = () => {
   const [selectedTier, setSelectedTier] = useState("gold");
   const [selectedTags, setSelectedTags] = useState<string[]>(["maintenance", "board", "urgent"]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>(["1", "3"]);
+  const {
+    data: emailTemplates,
+    error: emailTemplatesError,
+    isLoading: isLoadingEmailTemplates,
+  } =
+    useGetEmailTemplatePreviewsQuery();
 
   return (
     <TooltipProvider>
@@ -145,7 +153,61 @@ export const DesignSystemPage: React.FC = () => {
             <TabsTrigger value="table">Data Table</TabsTrigger>
             <TabsTrigger value="table-actions">Table Actions</TabsTrigger>
             <TabsTrigger value="feedback">Feedback & States</TabsTrigger>
+            <TabsTrigger value="emails">Email Templates</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="emails">
+            <MotionPage className="space-y-8">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Transactional email templates</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  These previews are rendered by the same server templates used for real email delivery.
+                </p>
+              </div>
+
+              {isLoadingEmailTemplates && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
+                  Loading email templates…
+                </div>
+              )}
+
+              {emailTemplatesError && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+                  <p className="font-semibold">Email templates could not be loaded.</p>
+                  <p className="mt-1">
+                    {formatApiErrorDetail((emailTemplatesError as { data?: unknown }).data) ||
+                      "Restart the backend and confirm /api/admin/associations/email-templates is available."}
+                  </p>
+                </div>
+              )}
+
+              {emailTemplates && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+                  {[
+                    ["registration", "Registration code"],
+                    ["password_reset", "Password reset link"],
+                    ["password_reset_otp", "Password reset verification code"],
+                  ].map(([key, label]) => {
+                    const template = emailTemplates[key as keyof typeof emailTemplates];
+                    return (
+                      <section key={key} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100">
+                          <p className="text-xs uppercase tracking-wider font-bold text-slate-500">{label}</p>
+                          <h4 className="text-sm font-semibold text-slate-800 mt-1">{template.subject}</h4>
+                        </div>
+                        <iframe
+                          title={`${label} preview`}
+                          srcDoc={template.html}
+                          className="w-full h-[720px] bg-[#f9f8f6]"
+                          sandbox=""
+                        />
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
+            </MotionPage>
+          </TabsContent>
 
           {/* TAB 1: ATOMIC PRIMITIVES */}
           <TabsContent value="primitives">

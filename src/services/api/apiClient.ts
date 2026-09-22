@@ -35,6 +35,7 @@ const PUBLIC_API_PATHS = [
   "/user-details",
   "/create-account",
   "/update-details-request",
+  "/admin/associations/email-templates",
 ];
 
 const isPublicApiRequest = (url = ""): boolean => {

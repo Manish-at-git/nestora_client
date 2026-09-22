@@ -59,7 +59,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
         {
           key: "name",
           header: "Feature Name",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "260px",
           render: (row) => {
@@ -75,7 +75,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
                   )}
                 </div>
 
-                <span className="font-semibold text-slate-800 text-xs truncate flex items-center gap-1.5">
+                <span className="font-medium text-slate-800 text-xs truncate flex items-center gap-1.5">
                   {isChild && (
                     <CornerDownRight
                       size={13}
@@ -91,7 +91,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
         {
           key: "code",
           header: "Code",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "170px",
           render: (row) => (
@@ -103,7 +103,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
         {
           key: "parent_name",
           header: "Parent Feature",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "180px",
           render: (row) =>
@@ -124,7 +124,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
         {
           key: "url",
           header: "URL / Route",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "250px",
           render: (row) =>
@@ -145,7 +145,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
         {
           key: "is_active",
           header: "Status",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "110px",
           render: (row) => {
@@ -165,7 +165,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({
         {
           key: "created_at",
           header: "Created At",
-          sortable: true,
+          sortable: false,
           filterable: true,
           width: "130px",
           render: (row) => (

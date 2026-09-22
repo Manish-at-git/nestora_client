@@ -82,6 +82,7 @@ export const BoardTasksPage: React.FC<BoardTasksPageProps> = ({
     isError: isSingleTaskError,
   } = useGetBoardTaskByIdQuery(taskId || "", {
     skip: !taskId || !!taskFromList,
+    refetchOnMountOrArgChange: true,
   });
 
   const activeTask = taskFromList || singleTask || null;
