@@ -144,7 +144,7 @@ export const ViewBankModal: React.FC<ViewBankModalProps> = ({
 
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                Assigned Association
+                Onboarded Association
               </span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Building size={12} className="text-indigo-500" />

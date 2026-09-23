@@ -296,7 +296,7 @@ export const BankFormModal: React.FC<BankFormModalProps> = ({
 
           {/* TAB 1: Banking Details */}
           <TabsContent value="banking" className="space-y-4 mt-0">
-            <FormField label="Assigned Association" required error={errors.associationId}>
+            <FormField label="Onboarded Association" required error={errors.associationId}>
               <Select
                 value={associationId}
                 onChange={(e) => {

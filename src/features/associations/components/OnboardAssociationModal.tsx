@@ -166,9 +166,15 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
       ? parseInt(numBlocks, 10) * parseInt(floorsPerBlock, 10) * parseInt(unitsPerFloor, 10)
       : null;
 
+  const availableEntities = entities.filter((entity) => !entity.is_onboarded);
   const entityOptions = [
-    { value: "", label: "-- Select Organization Entity --" },
-    ...entities.map((ent) => ({
+    {
+      value: "",
+      label: availableEntities.length
+        ? "-- Select Organization Entity --"
+        : "-- No un-onboarded entities available --",
+    },
+    ...availableEntities.map((ent) => ({
       value: ent.id,
       label: `${ent.name} (${ent.entity_type_name || "Entity"})`,
     })),
@@ -211,7 +217,7 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
             }}
             options={entityOptions}
             placeholder="-- Select Organization Entity --"
-            disabled={isOnboarding || isLoadingEntities}
+            disabled={isOnboarding || isLoadingEntities || availableEntities.length === 0}
             error={Boolean(errors.entityId)}
             size="sm"
           />

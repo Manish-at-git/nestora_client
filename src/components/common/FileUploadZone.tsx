@@ -18,6 +18,7 @@ export interface FileUploadZoneProps {
   onChange: (fileUrl: string) => void;
   onUpload?: (file: File) => Promise<string | void>;
   onUploadingChange?: (uploading: boolean) => void;
+  showSuccessToast?: boolean;
   accept?: string;
   maxSizeMB?: number;
   label?: string;
@@ -32,6 +33,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   onChange,
   onUpload,
   onUploadingChange,
+  showSuccessToast = false,
   accept = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg",
   maxSizeMB = 25,
   label = "Upload File or Document",
@@ -66,7 +68,9 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
 
       if (uploadedUrl && typeof uploadedUrl === "string") {
         onChange(uploadedUrl);
-        toast.success(`"${file.name}" uploaded successfully!`);
+        if (showSuccessToast) {
+          toast.success(`"${file.name}" uploaded successfully!`);
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to upload file. Please try again.");

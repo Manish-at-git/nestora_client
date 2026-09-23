@@ -62,7 +62,10 @@ export const associationsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: unknown) =>
         unwrapApiData<{ ok: boolean; message?: string }>(response as { ok: boolean; message?: string }),
-      invalidatesTags: [{ type: "Associations", id: "LIST" }],
+      invalidatesTags: [
+        { type: "Associations", id: "LIST" },
+        { type: "Entities", id: "LIST" },
+      ],
     }),
   }),
 });

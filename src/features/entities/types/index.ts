@@ -5,6 +5,7 @@ export interface Entity {
   entity_type_id?: string | null;
   entity_type_name?: string | null;
   association_id?: string | null;
+  is_onboarded?: boolean;
   status?: string | null;
   is_active?: boolean | number | null;
   created_at?: string | null;
