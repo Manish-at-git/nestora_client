@@ -82,7 +82,7 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   // Required for the browser to store and send the HttpOnly session cookie.
   withCredentials: true,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
