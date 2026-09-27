@@ -221,7 +221,7 @@ export const AssociationTable: React.FC<AssociationTableProps> = ({
           <Button
             onClick={onAdd}
           >
-            <Plus size={14} className="mr-1.5" />
+            <Plus size={14} className="" />
             <span>Onboard Association</span>
           </Button>
         )

@@ -33,6 +33,9 @@ import { EmployeesPage } from "@/features/employees";
 import { UsersPage } from "@/features/users";
 import { VendorsPage } from "@/features/vendors";
 import { BankPage } from "@/features/bank";
+import { EmailTemplatesPage } from "@/features/email-templates";
+import { NearbyPlacesPage } from "@/features/nearby-places";
+import { ChatPoolPage } from "@/features/chat-pool";
 import { FinancialsPage } from "@/features/financials";
 import { ChartOfAccountsPage } from "@/features/chart-of-accounts";
 import DesignSystemPage from "@/features/design-system/DesignSystemPage";
@@ -48,6 +51,7 @@ import {
   VisitorOperationsPage,
 } from "@/features/visitor-management";
 import { ROLE_CODE } from "@/constants/roleCodes";
+import { FEATURES } from "@/constants/featureCodes";
 
 export interface AppRoute {
   path: string;
@@ -61,39 +65,39 @@ export interface AppRoute {
  */
 export const publicRoutes: AppRoute[] = [
   {
-    path: "/",
+    path: FEATURES.ROOT.FEATURE_PATH,
     element: <RoleRedirect />,
   },
   {
-    path: "/login",
+    path: FEATURES.LOGIN.FEATURE_PATH,
     element: <RoleRedirect />,
   },
   {
-    path: "/signin",
+    path: FEATURES.SIGNIN.FEATURE_PATH,
     element: <SignInPage />,
   },
   {
-    path: "/verify",
+    path: FEATURES.VERIFY.FEATURE_PATH,
     element: <VerifyDetailsPage />,
   },
   {
-    path: "/create-account",
+    path: FEATURES.CREATE_ACCOUNT.FEATURE_PATH,
     element: <CreateAccountPage />,
   },
   {
-    path: "/forgot-password",
+    path: FEATURES.FORGOT_PASSWORD.FEATURE_PATH,
     element: <ForgotPasswordPage />,
   },
   {
-    path: "/reset-password",
+    path: FEATURES.RESET_PASSWORD.FEATURE_PATH,
     element: <ResetPasswordPage />,
   },
   {
-    path: "/design-system",
+    path: FEATURES.DESIGN_SYSTEM.FEATURE_PATH,
     element: <DesignSystemPage />,
   },
   {
-    path: "/visitor-pass/:passCode",
+    path: FEATURES.VISITOR_PASS.FEATURE_PATH,
     element: <PublicVisitorPassPage />,
   },
 ];
@@ -107,7 +111,7 @@ export const protectedAppRoutes: AppRoute[] = [
   // Primary Dashboard Overview
   // ==========================================
   {
-    path: "/dashboard",
+    path: FEATURES.DASHBOARD.FEATURE_PATH,
     element: <RoleDashboardRouter />,
   },
 
@@ -115,27 +119,27 @@ export const protectedAppRoutes: AppRoute[] = [
   // Socials & Community Module
   // ==========================================
   {
-    path: "/announcements",
+    path: FEATURES.ANNOUNCEMENT.FEATURE_PATH,
     element: <AnnouncementsPage />,
   },
   {
-    path: "/events",
+    path: FEATURES.EVENTS.FEATURE_PATH,
     element: <EventsPage />,
   },
   {
-    path: "/polls",
+    path: FEATURES.POLLS.FEATURE_PATH,
     element: <PollsPage />,
   },
   {
-    path: "/board-members",
+    path: FEATURES.BOARD_MEMBER.FEATURE_PATH,
     element: <BoardMembersPage />,
   },
   {
-    path: "/committee-members",
+    path: FEATURES.COMMITTEE_MEMBER.FEATURE_PATH,
     element: <CommitteeMembersPage />,
   },
   {
-    path: "/committees",
+    path: FEATURES.COMMITTEES.FEATURE_PATH,
     element: <CommitteesPage />,
   },
 
@@ -143,31 +147,31 @@ export const protectedAppRoutes: AppRoute[] = [
   // Governance & Operations
   // ==========================================
   {
-    path: "/meetings",
+    path: FEATURES.MEETINGS.FEATURE_PATH,
     element: <MeetingsPage />,
   },
   {
-    path: "/meetings/:meetingId",
+    path: FEATURES.MEETING_DETAIL.FEATURE_PATH,
     element: <MeetingsPage />,
   },
   {
-    path: "/board-tasks",
+    path: FEATURES.BOARD_TASK.FEATURE_PATH,
     element: <BoardTasksPage />,
   },
   {
-    path: "/board-tasks/:taskId",
+    path: FEATURES.BOARD_TASK_DETAIL.FEATURE_PATH,
     element: <BoardTasksPage />,
   },
   {
-    path: "/wallet",
+    path: FEATURES.WALLET.FEATURE_PATH,
     element: <WalletPage />,
   },
   {
-    path: "/profile",
+    path: FEATURES.PROFILE.FEATURE_PATH,
     element: <UserProfilePage />,
   },
   {
-    path: "/election",
+    path: FEATURES.ELECTION.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="Elections"
@@ -181,39 +185,39 @@ export const protectedAppRoutes: AppRoute[] = [
   // Management & Placeholder Modules
   // ==========================================
   {
-    path: "/service-requests",
+    path: FEATURES.SERVICE_REQUEST.FEATURE_PATH,
     element: <ServiceRequestsPage />,
   },
   {
-    path: "/service-requests/:requestId",
+    path: FEATURES.SERVICE_REQUEST_DETAIL.FEATURE_PATH,
     element: <ServiceRequestsPage />,
   },
   {
-    path: "/resident-documents",
+    path: FEATURES.RESIDENT_DOCUMENT.FEATURE_PATH,
     element: <DocumentsPage />,
   },
   {
-    path: "/documents",
+    path: FEATURES.DOCUMENTS.FEATURE_PATH,
     element: <DocumentsPage />,
   },
   {
-    path: "/board-documents",
+    path: FEATURES.BOARD_DOCUMENT.FEATURE_PATH,
     element: <DocumentsPage />,
   },
   {
-    path: "/amenities",
+    path: FEATURES.AMENITIES.FEATURE_PATH,
     element: <AmenitiesPage />,
   },
   {
-    path: "/marketplace",
+    path: FEATURES.MARKETPLACE.FEATURE_PATH,
     element: <MarketplacePage />,
   },
   {
-    path: "/financials",
+    path: FEATURES.FINANCIALS.FEATURE_PATH,
     element: <FinancialsPage />,
   },
   {
-    path: "/inspection",
+    path: FEATURES.INSPECTION.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="inspection"
@@ -227,22 +231,22 @@ export const protectedAppRoutes: AppRoute[] = [
   // Admin & Management Workspace
   // ==========================================
   {
-    path: "/admin",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.ADMIN.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
     allowedRoles: [ROLE_CODE.ADMIN, ROLE_CODE.SUPER_ADMIN],
   },
   {
-    path: "/admin/overview",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.ADMIN_OVERVIEW.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
     allowedRoles: [ROLE_CODE.ADMIN, ROLE_CODE.SUPER_ADMIN],
   },
   {
-    path: "/admin/associations",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.ADMIN_ASSOCIATIONS.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
     allowedRoles: [ROLE_CODE.ADMIN, ROLE_CODE.SUPER_ADMIN],
   },
   {
-    path: "/budget",
+    path: FEATURES.BUDGET.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="budget"
@@ -252,19 +256,19 @@ export const protectedAppRoutes: AppRoute[] = [
     ),
   },
   {
-    path: "/chart-of-accounts",
+    path: FEATURES.CHART_OF_ACCOUNT.FEATURE_PATH,
     element: <ChartOfAccountsPage />,
   },
   {
-    path: "/bank",
+    path: FEATURES.BANK.FEATURE_PATH,
     element: <BankPage />,
   },
   {
-    path: "/unit-documents",
+    path: FEATURES.UNIT_DOCUMENT.FEATURE_PATH,
     element: <UnitDocumentsPage />,
   },
   {
-    path: "/email-activity",
+    path: FEATURES.EMAIL_ACTIVITY.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="email_activity"
@@ -277,68 +281,85 @@ export const protectedAppRoutes: AppRoute[] = [
   // Super Admin Platform Controls
   // ==========================================
   {
-    path: "/super-admin",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.SUPER_ADMIN.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
     allowedRoles: [ROLE_CODE.SUPER_ADMIN],
   },
   {
-    path: "/subscriptions",
+    path: FEATURES.SUBSCRIPTION_PLANS.FEATURE_PATH,
     element: <SubscriptionsPage />,
   },
   {
-    path: "/associations",
+    path: FEATURES.ASSOCIATIONS.FEATURE_PATH,
     element: <AssociationsPage />,
   },
   {
-    path: "/employees",
+    path: FEATURES.EMPLOYEES.FEATURE_PATH,
     element: <EmployeesPage />,
   },
   {
-    path: "/users",
+    path: FEATURES.USERS.FEATURE_PATH,
     element: <UsersPage />,
   },
   {
-    path: "/vendors",
+    path: FEATURES.VENDORS.FEATURE_PATH,
     element: <VendorsPage />,
   },
   {
-    path: "/entities",
+    path: FEATURES.ENTITIES.FEATURE_PATH,
     element: <EntitiesPage />,
   },
   {
-    path: "/entity-types",
+    path: FEATURES.ENTITY_TYPES.FEATURE_PATH,
     element: <EntityTypesPage />,
   },
   {
-    path: "/roles",
+    path: FEATURES.ROLES.FEATURE_PATH,
     element: <RolesPage />,
   },
   {
-    path: "/features",
+    path: FEATURES.FEATURES.FEATURE_PATH,
     element: <FeaturesPage />,
   },
   {
-    path: "/permissions",
+    path: FEATURES.PERMISSIONS.FEATURE_PATH,
     element: <PermissionsPage />,
+  },
+  {
+    path: FEATURES.EMAIL_TEMPLATES.FEATURE_PATH,
+    element: <EmailTemplatesPage />,
+    allowedRoles: [ROLE_CODE.SUPER_ADMIN],
+  },
+  {
+    path: FEATURES.NEARBY_PLACES.FEATURE_PATH,
+    element: <NearbyPlacesPage />,
+  },
+  {
+    path: FEATURES.CHAT_POOL.FEATURE_PATH,
+    element: <ChatPoolPage />,
+  },
+  {
+    path: `${FEATURES.CHAT_POOL.FEATURE_PATH}/:poolType/:poolId`,
+    element: <ChatPoolPage />,
   },
 
   // ==========================================
   // Security & Gate Operations
   // ==========================================
   {
-    path: "/security",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.SECURITY.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
   {
-    path: "/visitor-management",
+    path: FEATURES.VISITOR_MANAGEMENT.FEATURE_PATH,
     element: <PreApprovedVisitorsPage />,
   },
   {
-    path: "/visitor-management/preapproved",
+    path: FEATURES.PRE_APPROVED_VISITORS.FEATURE_PATH,
     element: <PreApprovedVisitorsPage />,
   },
   {
-    path: "/visitor-management/new",
+    path: FEATURES.NEW_VISITOR.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="visitor_management"
@@ -348,23 +369,23 @@ export const protectedAppRoutes: AppRoute[] = [
     ),
   },
   {
-    path: "/visitor-management/checkin",
+    path: FEATURES.CHECK_IN.FEATURE_PATH,
     element: <VisitorOperationsPage mode="checkin" />,
   },
   {
-    path: "/visitor-management/checkout",
+    path: FEATURES.CHECK_OUT.FEATURE_PATH,
     element: <VisitorOperationsPage mode="checkout" />,
   },
   {
-    path: "/visitor-management/history",
+    path: FEATURES.VISITOR_HISTORY.FEATURE_PATH,
     element: <VisitorOperationsPage mode="history" />,
   },
   {
-    path: "/deliveries",
+    path: FEATURES.DELIVERY.FEATURE_PATH,
     element: <VisitorOperationsPage mode="delivery" />,
   },
   {
-    path: "/deliveries/new",
+    path: FEATURES.NEW_DELIVERY.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="delivery"
@@ -374,15 +395,15 @@ export const protectedAppRoutes: AppRoute[] = [
     ),
   },
   {
-    path: "/deliveries/active",
+    path: FEATURES.ACTIVE_DELIVERIES.FEATURE_PATH,
     element: <VisitorOperationsPage mode="delivery" />,
   },
   {
-    path: "/deliveries/history",
+    path: FEATURES.DELIVERY_HISTORY.FEATURE_PATH,
     element: <VisitorOperationsPage mode="delivery-history" />,
   },
   {
-    path: "/vehicles",
+    path: FEATURES.VEHICLES.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="vehicles"
@@ -392,7 +413,7 @@ export const protectedAppRoutes: AppRoute[] = [
     ),
   },
   {
-    path: "/staff",
+    path: FEATURES.STAFF_ENTRY.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="staff"
@@ -402,7 +423,7 @@ export const protectedAppRoutes: AppRoute[] = [
     ),
   },
   {
-    path: "/incidents",
+    path: FEATURES.INCIDENTS.FEATURE_PATH,
     element: (
       <ModulePlaceholder
         moduleName="incidents"
@@ -416,11 +437,11 @@ export const protectedAppRoutes: AppRoute[] = [
   // Accounting & Financials
   // ==========================================
   {
-    path: "/financials",
+    path: FEATURES.FINANCIALS.FEATURE_PATH,
     element: <FinancialsPage />,
   },
   {
-    path: "/financials/:report",
+    path: FEATURES.FINANCIAL_REPORT.FEATURE_PATH,
     element: <FinancialsPage />,
   },
 
@@ -428,7 +449,7 @@ export const protectedAppRoutes: AppRoute[] = [
   // User Profile
   // ==========================================
   {
-    path: "/profile",
+    path: FEATURES.PROFILE.FEATURE_PATH,
     element: <UserProfilePage />,
   },
 
@@ -436,28 +457,28 @@ export const protectedAppRoutes: AppRoute[] = [
   // Legacy URL Redirects
   // ==========================================
   {
-    path: "/homeowner-dashboard",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.HOMEOWNER_DASHBOARD.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
   {
-    path: "/tenant-dashboard",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.TENANT_DASHBOARD.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
   {
-    path: "/board-dashboard",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.BOARD_DASHBOARD.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
   {
-    path: "/committee-dashboard",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.COMMITTEE_DASHBOARD.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
   {
-    path: "/security-dashboard",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.SECURITY_DASHBOARD.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
   {
-    path: "/accountant-dashboard",
-    element: <Navigate to="/dashboard" replace />,
+    path: FEATURES.ACCOUNTANT_DASHBOARD.FEATURE_PATH,
+    element: <Navigate to={FEATURES.DASHBOARD.FEATURE_PATH} replace />,
   },
 ];
 
@@ -468,8 +489,8 @@ export const appRoutes: AppRoute[] = [
   ...publicRoutes.map((r) => ({ ...r, isProtected: false })),
   ...protectedAppRoutes.map((r) => ({ ...r, isProtected: true })),
   {
-    path: "*",
-    element: <Navigate to="/" replace />,
+    path: FEATURES.NOT_FOUND.FEATURE_PATH,
+    element: <Navigate to={FEATURES.ROOT.FEATURE_PATH} replace />,
     isProtected: false,
   },
 ];

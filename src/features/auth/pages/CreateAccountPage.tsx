@@ -2,18 +2,35 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
-import { useGetUserDetailsQuery, useCreateAccountMutation } from "../api/authApi";
+import {
+  useGetUserDetailsQuery,
+  useCreateAccountMutation,
+} from "../api/authApi";
 import { formatApiErrorDetail } from "@/services/api/apiClient";
 import { PasswordStrength } from "../components/PasswordStrength";
 import { useAuth } from "@/context/AuthContext";
+import { LegalModal, type LegalTab } from "@/components/common";
+import { FEATURES } from "@/constants/featureCodes";
 
 export const CreateAccountPage: React.FC = () => {
   const navigate = useNavigate();
   const { refresh, connectRealtime } = useAuth();
   const [code, setCode] = useState("");
-  const [form, setForm] = useState({ email: "", password: "", confirm_password: "" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    confirm_password: "",
+  });
   const [showPw, setShowPw] = useState(false);
   const [err, setErr] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [legalModal, setLegalModal] = useState<{
+    open: boolean;
+    tab: LegalTab;
+  }>({
+    open: false,
+    tab: "terms",
+  });
 
   useEffect(() => {
     const c = sessionStorage.getItem("nestora_code");
@@ -39,6 +56,13 @@ export const CreateAccountPage: React.FC = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
+    if (!agreedToTerms) {
+      const message =
+        "Please agree to the Terms & Conditions and Privacy Policy to continue.";
+      setErr(message);
+      toast.error(message);
+      return;
+    }
     if (form.password !== form.confirm_password) {
       setErr("Passwords don't match.");
       return;
@@ -55,7 +79,7 @@ export const CreateAccountPage: React.FC = () => {
       }
       sessionStorage.removeItem("nestora_code");
       toast.success("Welcome to Nestora!");
-      navigate("/");
+      navigate(FEATURES.HOMEOWNER_DASHBOARD.FEATURE_PATH);
     } catch (e: any) {
       const msg = formatApiErrorDetail(e.data || e.message);
       setErr(msg);
@@ -73,17 +97,18 @@ export const CreateAccountPage: React.FC = () => {
             Final step · 03
           </p>
           <h2 className="font-display text-5xl italic leading-[1.05] mb-8">
-            One password.<br />A lifetime of community.
+            One password.
+            <br />A lifetime of community.
           </h2>
           <p className="text-white/80 max-w-sm leading-relaxed text-[15px]">
             Your account gives you a private, ad-free hub for announcements,
-            dues, members, and the events that make your association feel
-            like home.
+            dues, members, and the events that make your association feel like
+            home.
           </p>
         </div>
         <div className="relative z-10 flex items-center gap-3 text-white/70 text-sm">
           <ShieldCheck size={16} />
-          <span>End-to-end encrypted · No spam, ever</span>
+          <span>DPDP Act (2023) Compliant · End-to-end encrypted</span>
         </div>
       </aside>
 
@@ -107,7 +132,11 @@ export const CreateAccountPage: React.FC = () => {
             Set the email &amp; password you'll use to sign in from now on.
           </p>
 
-          <form onSubmit={submit} className="space-y-6" data-testid="create-account-form">
+          <form
+            onSubmit={submit}
+            className="space-y-6"
+            data-testid="create-account-form"
+          >
             <div>
               <label className="block uppercase tracking-[0.22em] text-[11px] text-muted mb-2">
                 Email
@@ -130,7 +159,9 @@ export const CreateAccountPage: React.FC = () => {
                   type={showPw ? "text" : "password"}
                   className="input-underline pr-10"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
                   required
                   data-testid="create-password"
                   placeholder="8+ chars, 1 upper, 1 number, 1 symbol"
@@ -155,10 +186,52 @@ export const CreateAccountPage: React.FC = () => {
                 type={showPw ? "text" : "password"}
                 className="input-underline"
                 value={form.confirm_password}
-                onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, confirm_password: e.target.value })
+                }
                 required
                 data-testid="create-confirm-password"
               />
+            </div>
+
+            <div className="border-t border-slate-200/80 pt-2 pb-1">
+              <label className="group flex cursor-pointer select-none items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(event) => setAgreedToTerms(event.target.checked)}
+                  className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 text-moss focus:ring-moss"
+                  data-testid="agree-terms-checkbox"
+                />
+                <span className="text-xs leading-relaxed text-muted">
+                  I agree to Nestora&apos;s{" "}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setLegalModal({ open: true, tab: "terms" });
+                    }}
+                    className="inline font-medium text-ink underline transition-colors hover:text-moss"
+                  >
+                    Terms &amp; Conditions
+                  </button>{" "}
+                  and{" "}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setLegalModal({ open: true, tab: "privacy" });
+                    }}
+                    className="inline font-medium text-ink underline transition-colors hover:text-moss"
+                  >
+                    Privacy Policy
+                  </button>
+                  , acknowledging my rights under the Digital Personal Data
+                  Protection (DPDP) Act, 2023.
+                </span>
+              </label>
             </div>
 
             {err && (
@@ -173,16 +246,25 @@ export const CreateAccountPage: React.FC = () => {
 
             <button
               type="submit"
-              className="btn-primary w-full justify-center group cursor-pointer"
-              disabled={loading}
+              className="btn-primary group w-full justify-center cursor-pointer transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!agreedToTerms || loading}
               data-testid="create-account-submit"
             >
               {loading ? "Creating…" : "Create account"}
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform duration-200" />
+              <ArrowRight
+                size={16}
+                className="transition-transform duration-200"
+              />
             </button>
           </form>
         </div>
       </section>
+      <LegalModal
+        isOpen={legalModal.open}
+        initialTab={legalModal.tab}
+        onClose={() => setLegalModal({ open: false, tab: "terms" })}
+        onAccept={() => setAgreedToTerms(true)}
+      />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { checkFeatureAccess } from "@/config/navigation";
+import { checkFeatureAccess } from "@/config/dynamicNavigation";
 import type { UserRole } from "@/types/auth";
 
 export interface ProtectedRouteProps {

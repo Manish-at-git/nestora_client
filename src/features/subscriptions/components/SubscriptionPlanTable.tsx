@@ -79,7 +79,7 @@ export const SubscriptionPlanTable: React.FC<SubscriptionPlanTableProps> = ({
         ),
       },
       {
-        key: "name",
+        key: "code",
         header: "Plan Code",
         sortable: true,
         filterable: true,

@@ -15,8 +15,8 @@ export interface NotificationAlertPreferences {
 
 const ALERT_PREFERENCES_KEY = "nestora.notification-alert-preferences";
 const defaultAlertPreferences: NotificationAlertPreferences = {
-  toastEnabled: false,
-  browserEnabled: true,
+  toastEnabled: true,
+  browserEnabled: false,
 };
 
 const loadAlertPreferences = (): NotificationAlertPreferences => {

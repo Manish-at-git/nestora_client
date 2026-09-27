@@ -9,10 +9,10 @@ export const entitySchema = z.object({
   entity_type_id: z
     .string({ required_error: "Please select an entity type" })
     .min(1, "Please select an entity type"),
-  association_id: z
+  association_code: z
     .string()
     .trim()
-    .max(100, "Association identifier cannot exceed 100 characters")
+    .max(100, "Association code cannot exceed 100 characters")
     .optional()
     .or(z.literal("")),
   description: z

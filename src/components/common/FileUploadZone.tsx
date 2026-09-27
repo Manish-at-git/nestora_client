@@ -17,6 +17,8 @@ export interface FileUploadZoneProps {
   value?: string;
   onChange: (fileUrl: string) => void;
   onUpload?: (file: File) => Promise<string | void>;
+  onFileRead?: (file: File) => Promise<void> | void;
+  localOnly?: boolean;
   onUploadingChange?: (uploading: boolean) => void;
   showSuccessToast?: boolean;
   accept?: string;
@@ -32,6 +34,8 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   value,
   onChange,
   onUpload,
+  onFileRead,
+  localOnly = false,
   onUploadingChange,
   showSuccessToast = false,
   accept = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg",
@@ -58,6 +62,11 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
       onUploadingChange?.(true);
       setFileName(file.name);
 
+      if (onFileRead) {
+        await onFileRead(file);
+        return;
+      }
+
       let uploadedUrl: string | void;
       if (onUpload) {
         uploadedUrl = await onUpload(file);
@@ -73,6 +82,10 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         }
       }
     } catch (err: any) {
+      if (localOnly) {
+        setFileName("");
+        onChange("");
+      }
       toast.error(err?.message || "Failed to upload file. Please try again.");
     } finally {
       setUploading(false);
@@ -136,10 +149,11 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
     );
   };
 
-  if (value) {
-    const displayName = getCleanDisplayName(value);
-    const pdf = isPdf(value, displayName);
-    const sheet = isSheet(value, displayName);
+  if (value || (localOnly && fileName)) {
+    const displayName = getCleanDisplayName(value || fileName);
+    const displaySource = value || displayName;
+    const pdf = isPdf(displaySource, displayName);
+    const sheet = isSheet(displaySource, displayName);
 
     return (
       <div
@@ -175,15 +189,17 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <a
-            href={value}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-white transition-colors border border-transparent hover:border-slate-200"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Preview</span>
-          </a>
+          {!localOnly && value ? (
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Preview</span>
+            </a>
+          ) : null}
           <Button
             type="button"
             variant="ghost"

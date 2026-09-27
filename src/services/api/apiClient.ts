@@ -122,15 +122,17 @@ apiClient.interceptors.response.use(
       responseData?.message ||
       (typeof responseData?.detail === "string" ? responseData.detail : undefined);
 
-    // Keep API failures visible during development without logging request bodies
-    // or headers, which may contain passwords, tokens, or other sensitive data.
-    console.error("[API error]", {
-      method: error.config?.method?.toUpperCase(),
-      url: error.config?.url,
-      status: error.response?.status,
-      message: serverMessage || error.message,
-      response: error.response?.data,
-    });
+    // Development diagnostics remain available in the browser console and Network
+    // response, without exposing server debug details in the application UI.
+    if (import.meta.env.DEV) {
+      console.error("[API error]", {
+        method: error.config?.method?.toUpperCase(),
+        url: error.config?.url,
+        status: error.response?.status,
+        message: serverMessage || error.message,
+        response: error.response?.data,
+      });
+    }
 
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;

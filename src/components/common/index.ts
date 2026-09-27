@@ -8,6 +8,7 @@ export * from "./FileActions";
 export * from "./FileUploadZone";
 export * from "./FormField";
 export * from "./LoadingSpinner";
+export * from "./LegalModal";
 export * from "./MeetingOverviewModal";
 export * from "./ModalWrapper";
 export * from "./FormModal";
@@ -22,6 +23,10 @@ export * from "./UpgradePlanModal";
 export * from "./AccessRestricted";
 export * from "./TableRowActions";
 export { MonthPicker } from "@/components/ui/month-picker";
-export { DatePicker, DateRangePicker, YearPicker } from "@/components/ui/date-picker";
+export {
+  DatePicker,
+  DateRangePicker,
+  YearPicker,
+} from "@/components/ui/date-picker";
 export { DateInput } from "@/components/ui/date-input";
 export * from "./AdminHomeownerSearch";

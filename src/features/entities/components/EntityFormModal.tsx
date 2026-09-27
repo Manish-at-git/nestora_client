@@ -50,7 +50,7 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
     defaultValues: {
       name: "",
       entity_type_id: "",
-      association_id: "",
+      association_code: "",
       description: "",
     },
   });
@@ -72,14 +72,14 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
           entity_type_id: entityToEdit.entity_type_id
             ? String(entityToEdit.entity_type_id)
             : "",
-          association_id: entityToEdit.association_id || "",
+          association_code: entityToEdit.association_code || "",
           description: entityToEdit.description || "",
         });
       } else {
         reset({
           name: "",
           entity_type_id: "",
-          association_id: "",
+          association_code: "",
           description: "",
         });
       }
@@ -95,7 +95,7 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
             name: data.name.trim(),
             description: data.description?.trim() || undefined,
             entity_type_id: data.entity_type_id,
-            association_id: data.association_id?.trim() || undefined,
+            association_code: data.association_code?.trim() || undefined,
           },
         }).unwrap();
         toast.success("Entity updated successfully");
@@ -104,7 +104,7 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
           name: data.name.trim(),
           description: data.description?.trim() || undefined,
           entity_type_id: data.entity_type_id,
-          association_id: data.association_id?.trim() || undefined,
+          association_code: data.association_code?.trim() || undefined,
         }).unwrap();
         toast.success("Entity created successfully");
       }
@@ -119,7 +119,7 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
   const fieldOrder: (keyof EntityFormData)[] = [
     "name",
     "entity_type_id",
-    "association_id",
+    "association_code",
     "description",
   ];
   const activeErrorKey = fieldOrder.find((key) => errors[key]);
@@ -169,11 +169,11 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
           />
         </FormField>
 
-        <FormField label="Association Identifier (Optional)" error={getFieldError("association_id")}>
+        <FormField label="Association Code (Optional)" error={getFieldError("association_code")}>
           <Input
             placeholder="e.g. HOA-102, ASSOC-NYC-01"
             disabled={isSubmitting}
-            {...register("association_id")}
+            {...register("association_code")}
           />
         </FormField>
 

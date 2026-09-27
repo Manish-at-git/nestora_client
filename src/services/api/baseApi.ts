@@ -1,6 +1,6 @@
 import { createApi, BaseQueryFn } from "@reduxjs/toolkit/query/react";
 import type { AxiosRequestConfig, AxiosError } from "axios";
-import apiClient from "./apiClient";
+import apiClient, { formatApiErrorDetail } from "./apiClient";
 import type { ApiErrorDetail } from "@/types/api";
 
 interface BaseQueryArgs {
@@ -34,7 +34,7 @@ const axiosBaseQuery =
       return {
         error: {
           status: err.response?.status,
-          data: err.response?.data?.message || err.response?.data?.detail || err.message,
+          data: formatApiErrorDetail(err.response?.data || err.message),
         },
       };
     }
@@ -76,7 +76,10 @@ export const baseApi = createApi({
     "Users",
     "Vendors",
     "Bank",
+    "EmailTemplates",
     "Locations",
+    "NearbyPlaces",
+    "ChatPools",
   ],
   endpoints: () => ({}),
 });

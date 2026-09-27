@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { ROLE_CODE } from "@/constants/roleCodes";
 import {
   AccountantDashboard,
   AdminDashboard,
@@ -20,24 +21,24 @@ import {
 export const RoleDashboardRouter: React.FC = () => {
   const { account } = useAuth();
 
-  switch (account?.role?.toLowerCase()) {
-    case "super admin":
+  switch (account?.role_code?.toLowerCase()) {
+    case ROLE_CODE.SUPER_ADMIN:
       return <SuperAdminOverview />;
-    case "admin":
+    case ROLE_CODE.ADMIN:
       return <AdminDashboard />;
-    case "accountant":
+    case ROLE_CODE.ACCOUNTANT:
       return <AccountantDashboard />;
-    case "security":
+    case ROLE_CODE.SECURITY:
       return <SecurityDashboard />;
-    case "tenant":
+    case ROLE_CODE.TENANT:
       return <TenantDashboard />;
-    case "board member":
+    case ROLE_CODE.BOARD_MEMBER:
       return <BoardMemberDashboard />;
-    case "committee member":
+    case ROLE_CODE.COMMITTEE_MEMBER:
       return <CommitteeMemberDashboard />;
-    case "homeowner":
+    case ROLE_CODE.HOMEOWNER:
       return <HomeownerDashboard />;
-    case "member":
+    case ROLE_CODE.CSR:
       return <MemberDashboard />;
     default:
       return <DashboardOverview />;

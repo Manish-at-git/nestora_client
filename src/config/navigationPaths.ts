@@ -1,95 +1,87 @@
-/**
- * Database-backed feature-code routes. This fallback map mirrors active
- * feature records that the client currently implements.
- */
+import { FEATURES } from "@/constants/featureCodes";
+
+/** Route lookup keyed by database navigation/feature code. */
 export const NAV_KEY_TO_PATH: Record<string, string> = {
-  overview: "/dashboard",
-  entity_types: "/entity-types",
-  entities: "/entities",
-  roles: "/roles",
-  features: "/features",
-  permissions: "/permissions",
-  subscription_plans: "/subscriptions",
-  associations: "/associations",
-  bank: "/bank",
-  financials: "/financials",
-  employees: "/employees",
-  users: "/users",
-  vendors: "/vendors",
-  service_request: "/service-requests",
-  board_task: "/board-tasks",
-  meetings: "/meetings",
-  committees: "/committees",
-  election: "/election",
-  socials: "/socials",
-  announcement: "/announcements",
-  events: "/events",
-  polls: "/polls",
-  board_member: "/board-members",
-  committee_member: "/committee-members",
-  amenities: "/amenities",
-  marketplace: "/marketplace",
-  documents: "/documents",
-  board_document: "/board-documents",
-  resident_document: "/resident-documents",
-  unit_document: "/unit-documents",
-  budget: "/budget",
-  chart_of_account: "/chart-of-accounts",
-  email_activity: "/email-activity",
-  inspection: "/inspection",
-  wallet: "/wallet",
-  visitor_management: "/visitor-management",
-  new_visitor: "/visitor-management/new",
-  pre_approved_visitors: "/visitor-management/preapproved",
-  check_in: "/visitor-management/checkin",
-  check_out: "/visitor-management/checkout",
-  visitor_history: "/visitor-management/history",
-  delivery: "/deliveries",
-  new_delivery: "/deliveries/new",
-  active_deliveries: "/deliveries/active",
-  delivery_history: "/deliveries/history",
-  vehicles: "/vehicles",
-  staff_entry: "/staff",
-  incidents: "/incidents",
-  balance_sheet: "/financials/balance-sheet",
-  income_statement: "/financials/income-statement",
-  delinquency_report: "/financials/delinquency-report",
-  prepaid_report: "/financials/prepaid-report",
-  vendor_aging_report: "/financials/vendor-aging",
-  invoice: "/financials/invoices",
-  bank_transaction: "/financials/bank-transactions",
-  bank_statement: "/financials/bank-statements",
-  other_report: "/financials/other-reports",
+  [FEATURES.DASHBOARD.FEATURE_CODE]: FEATURES.DASHBOARD.FEATURE_PATH,
+  [FEATURES.ENTITY_TYPES.FEATURE_CODE]: FEATURES.ENTITY_TYPES.FEATURE_PATH,
+  [FEATURES.ENTITIES.FEATURE_CODE]: FEATURES.ENTITIES.FEATURE_PATH,
+  [FEATURES.ROLES.FEATURE_CODE]: FEATURES.ROLES.FEATURE_PATH,
+  [FEATURES.FEATURES.FEATURE_CODE]: FEATURES.FEATURES.FEATURE_PATH,
+  [FEATURES.PERMISSIONS.FEATURE_CODE]: FEATURES.PERMISSIONS.FEATURE_PATH,
+  [FEATURES.EMAIL_TEMPLATES.FEATURE_CODE]: FEATURES.EMAIL_TEMPLATES.FEATURE_PATH,
+  [FEATURES.NEARBY_PLACES.FEATURE_CODE]: FEATURES.NEARBY_PLACES.FEATURE_PATH,
+  [FEATURES.CHAT_POOL.FEATURE_CODE]: FEATURES.CHAT_POOL.FEATURE_PATH,
+  [FEATURES.SUBSCRIPTION_PLANS.FEATURE_CODE]: FEATURES.SUBSCRIPTION_PLANS.FEATURE_PATH,
+  [FEATURES.ASSOCIATIONS.FEATURE_CODE]: FEATURES.ASSOCIATIONS.FEATURE_PATH,
+  [FEATURES.BANK.FEATURE_CODE]: FEATURES.BANK.FEATURE_PATH,
+  [FEATURES.FINANCIALS.FEATURE_CODE]: FEATURES.FINANCIALS.FEATURE_PATH,
+  [FEATURES.EMPLOYEES.FEATURE_CODE]: FEATURES.EMPLOYEES.FEATURE_PATH,
+  [FEATURES.USERS.FEATURE_CODE]: FEATURES.USERS.FEATURE_PATH,
+  [FEATURES.VENDORS.FEATURE_CODE]: FEATURES.VENDORS.FEATURE_PATH,
+  [FEATURES.SERVICE_REQUEST.FEATURE_CODE]: FEATURES.SERVICE_REQUEST.FEATURE_PATH,
+  [FEATURES.BOARD_TASK.FEATURE_CODE]: FEATURES.BOARD_TASK.FEATURE_PATH,
+  [FEATURES.MEETINGS.FEATURE_CODE]: FEATURES.MEETINGS.FEATURE_PATH,
+  [FEATURES.COMMITTEES.FEATURE_CODE]: FEATURES.COMMITTEES.FEATURE_PATH,
+  [FEATURES.ELECTION.FEATURE_CODE]: FEATURES.ELECTION.FEATURE_PATH,
+  [FEATURES.SOCIALS.FEATURE_CODE]: FEATURES.SOCIALS.FEATURE_PATH,
+  [FEATURES.ANNOUNCEMENT.FEATURE_CODE]: FEATURES.ANNOUNCEMENT.FEATURE_PATH,
+  [FEATURES.EVENTS.FEATURE_CODE]: FEATURES.EVENTS.FEATURE_PATH,
+  [FEATURES.POLLS.FEATURE_CODE]: FEATURES.POLLS.FEATURE_PATH,
+  [FEATURES.BOARD_MEMBER.FEATURE_CODE]: FEATURES.BOARD_MEMBER.FEATURE_PATH,
+  [FEATURES.COMMITTEE_MEMBER.FEATURE_CODE]: FEATURES.COMMITTEE_MEMBER.FEATURE_PATH,
+  [FEATURES.AMENITIES.FEATURE_CODE]: FEATURES.AMENITIES.FEATURE_PATH,
+  [FEATURES.MARKETPLACE.FEATURE_CODE]: FEATURES.MARKETPLACE.FEATURE_PATH,
+  [FEATURES.DOCUMENTS.FEATURE_CODE]: FEATURES.DOCUMENTS.FEATURE_PATH,
+  [FEATURES.BOARD_DOCUMENT.FEATURE_CODE]: FEATURES.BOARD_DOCUMENT.FEATURE_PATH,
+  [FEATURES.RESIDENT_DOCUMENT.FEATURE_CODE]: FEATURES.RESIDENT_DOCUMENT.FEATURE_PATH,
+  [FEATURES.UNIT_DOCUMENT.FEATURE_CODE]: FEATURES.UNIT_DOCUMENT.FEATURE_PATH,
+  [FEATURES.BUDGET.FEATURE_CODE]: FEATURES.BUDGET.FEATURE_PATH,
+  [FEATURES.CHART_OF_ACCOUNT.FEATURE_CODE]: FEATURES.CHART_OF_ACCOUNT.FEATURE_PATH,
+  [FEATURES.EMAIL_ACTIVITY.FEATURE_CODE]: FEATURES.EMAIL_ACTIVITY.FEATURE_PATH,
+  [FEATURES.INSPECTION.FEATURE_CODE]: FEATURES.INSPECTION.FEATURE_PATH,
+  [FEATURES.WALLET.FEATURE_CODE]: FEATURES.WALLET.FEATURE_PATH,
+  [FEATURES.VISITOR_MANAGEMENT.FEATURE_CODE]: FEATURES.VISITOR_MANAGEMENT.FEATURE_PATH,
+  [FEATURES.NEW_VISITOR.FEATURE_CODE]: FEATURES.NEW_VISITOR.FEATURE_PATH,
+  [FEATURES.PRE_APPROVED_VISITORS.FEATURE_CODE]: FEATURES.PRE_APPROVED_VISITORS.FEATURE_PATH,
+  [FEATURES.CHECK_IN.FEATURE_CODE]: FEATURES.CHECK_IN.FEATURE_PATH,
+  [FEATURES.CHECK_OUT.FEATURE_CODE]: FEATURES.CHECK_OUT.FEATURE_PATH,
+  [FEATURES.VISITOR_HISTORY.FEATURE_CODE]: FEATURES.VISITOR_HISTORY.FEATURE_PATH,
+  [FEATURES.DELIVERY.FEATURE_CODE]: FEATURES.DELIVERY.FEATURE_PATH,
+  [FEATURES.NEW_DELIVERY.FEATURE_CODE]: FEATURES.NEW_DELIVERY.FEATURE_PATH,
+  [FEATURES.ACTIVE_DELIVERIES.FEATURE_CODE]: FEATURES.ACTIVE_DELIVERIES.FEATURE_PATH,
+  [FEATURES.DELIVERY_HISTORY.FEATURE_CODE]: FEATURES.DELIVERY_HISTORY.FEATURE_PATH,
+  [FEATURES.VEHICLES.FEATURE_CODE]: FEATURES.VEHICLES.FEATURE_PATH,
+  [FEATURES.STAFF_ENTRY.FEATURE_CODE]: FEATURES.STAFF_ENTRY.FEATURE_PATH,
+  [FEATURES.INCIDENTS.FEATURE_CODE]: FEATURES.INCIDENTS.FEATURE_PATH,
+  [FEATURES.BALANCE_SHEET.FEATURE_CODE]: FEATURES.BALANCE_SHEET.FEATURE_PATH,
+  [FEATURES.INCOME_STATEMENT.FEATURE_CODE]: FEATURES.INCOME_STATEMENT.FEATURE_PATH,
+  [FEATURES.DELINQUENCY_REPORT.FEATURE_CODE]: FEATURES.DELINQUENCY_REPORT.FEATURE_PATH,
+  [FEATURES.PREPAID_REPORT.FEATURE_CODE]: FEATURES.PREPAID_REPORT.FEATURE_PATH,
+  [FEATURES.VENDOR_AGING_REPORT.FEATURE_CODE]: FEATURES.VENDOR_AGING_REPORT.FEATURE_PATH,
+  [FEATURES.INVOICE.FEATURE_CODE]: FEATURES.INVOICE.FEATURE_PATH,
+  [FEATURES.BANK_TRANSACTION.FEATURE_CODE]: FEATURES.BANK_TRANSACTION.FEATURE_PATH,
+  [FEATURES.BANK_STATEMENT.FEATURE_CODE]: FEATURES.BANK_STATEMENT.FEATURE_PATH,
+  [FEATURES.OTHER_REPORT.FEATURE_CODE]: FEATURES.OTHER_REPORT.FEATURE_PATH,
 };
 
-/**
- * Reverse lookup generated from the same feature-code route catalogue.
- */
+/** Reverse lookup generated from the same grouped route catalogue. */
 export const PATH_TO_NAV_KEY: Record<string, string> = Object.fromEntries(
-  Object.entries(NAV_KEY_TO_PATH).map(([key, path]) => [path, key])
+  Object.entries(NAV_KEY_TO_PATH).map(([key, path]) => [path, key]),
 );
 
-/**
- * Returns the URL path for a given nav key and role
- */
-export const getPathForNavKey = (key: string): string | undefined => NAV_KEY_TO_PATH[key];
+export const getPathForNavKey = (key: string): string | undefined =>
+  NAV_KEY_TO_PATH[key];
 
-/**
- * Resolves the active tab key from a given pathname
- */
-export const getNavKeyFromPath = (pathname: string, defaultKey: string = "overview"): string => {
-  // Direct match
+export const getNavKeyFromPath = (pathname: string, defaultKey: string = FEATURES.DASHBOARD.FEATURE_CODE): string => {
   if (PATH_TO_NAV_KEY[pathname]) {
     return PATH_TO_NAV_KEY[pathname];
   }
 
-  // Trim trailing slashes
   const cleanPath = pathname.replace(/\/+$/, "");
   if (PATH_TO_NAV_KEY[cleanPath]) {
     return PATH_TO_NAV_KEY[cleanPath];
   }
 
-  // Handle role dashboard tab subroutes (e.g. /dashboard/:tab or /homeowner-dashboard/:tab)
   const segments = cleanPath.split("/").filter(Boolean);
   if (segments.length >= 2) {
     const lastSegment = segments[segments.length - 1];

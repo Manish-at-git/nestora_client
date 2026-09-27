@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Building, Wallet, CheckCircle, MessageSquare, Menu } from "lucide-react";
+import { Building, Wallet, CheckCircle, MessageSquare, Menu, MapPin } from "lucide-react";
 import { NavItem } from "@/types/navigation";
-import { getNavItemsForAccount } from "@/config/navigation";
+import { getNavItemsForAccount } from "@/config/dynamicNavigation";
 import {
   UpgradePlanModal,
   AdminHomeownerSearch,
@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { setActiveAssociationId, openMobileSidebar } from "@/app/uiSlice";
 import { useGetAdminAssociationsQuery } from "@/services/api/associationsApi";
 import { ASSOCIATION_DIRECTORY_ROLE_CODES, ROLE_CODE } from "@/constants/roleCodes";
+import { FEATURES } from "@/constants/featureCodes";
 import { usePermission } from "@/hooks/usePermission";
 import {
   cn,
@@ -222,6 +223,8 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   const displayDescription = headerInfo.description;
 
   const { canView: canViewWallet } = usePermission("wallet");
+  const { canView: canViewNearbyPlaces } = usePermission(FEATURES.NEARBY_PLACES.FEATURE_CODE);
+  const { canView: canViewChatPool } = usePermission(FEATURES.CHAT_POOL.FEATURE_CODE);
   const { canView: canViewNotifications } = usePermission("notifications");
   const { canView: canViewNotification } = usePermission("notification");
   const isResidentOrMember =
@@ -301,6 +304,29 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
 
             {/* Top Row Right Actions: Notifications, Wallet, Profile */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {canViewNearbyPlaces && (
+                <button
+                  type="button"
+                  onClick={() => navigate(FEATURES.NEARBY_PLACES.FEATURE_PATH)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
+                  title="Nearby Places"
+                >
+                  <MapPin size={15} />
+                </button>
+              )}
+
+              {canViewChatPool && (
+                <button
+                  type="button"
+                  onClick={() => navigate(FEATURES.CHAT_POOL.FEATURE_PATH)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
+                  title="Chat Pool"
+                  aria-label="Open Chat Pool"
+                >
+                  <MessageSquare size={16} />
+                </button>
+              )}
+
               {showNotificationDropdown && <NotificationDropdown />}
 
               {showNavbarWallet && (
