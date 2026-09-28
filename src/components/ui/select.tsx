@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useId } from "react";
+import React, { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { Check, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +36,8 @@ export interface SelectProps {
   error?: boolean | string;
   icon?: React.ReactNode;
   clearable?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   onClear?: () => void;
   size?: "sm" | "md" | "lg";
   showAllOption?: boolean;
@@ -100,6 +102,12 @@ const stopEvent = (e: React.SyntheticEvent | Event) => {
   e.preventDefault();
 };
 
+// Search fields inside a Radix Select must keep keyboard events out of the
+// select's typeahead and roving-focus handlers, but must not cancel typing.
+const stopPropagation = (event: React.SyntheticEvent) => {
+  event.stopPropagation();
+};
+
 // ============================================================================
 // 1. SINGLE SELECT COMPONENT
 // ============================================================================
@@ -120,6 +128,8 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
       error = false,
       icon,
       clearable = false,
+      searchable = false,
+      searchPlaceholder = "Search options...",
       onClear,
       size = "md",
       showAllOption = false,
@@ -141,63 +151,87 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
     const selectId = id || (label ? `select-${autoId}` : undefined);
     const isSm = size === "sm";
     const isLg = size === "lg";
-    const effectivePlaceholder = placeholder || "Select an option...";
+    const effectivePlaceholder = placeholder || "Select an option";
 
-    // Normalize options list
-    const normalizedOptions: {
-      value: string;
-      label: React.ReactNode;
-      description?: React.ReactNode;
-      icon?: React.ReactNode;
-      disabled?: boolean;
-      group?: string;
-    }[] = [];
+    // Normalize only when option inputs change; this avoids rebuilding large lists
+    // while the user types in a searchable select.
+    const normalizedOptions = useMemo(() => {
+      const normalizedOptions: {
+        value: string;
+        label: React.ReactNode;
+        description?: React.ReactNode;
+        icon?: React.ReactNode;
+        disabled?: boolean;
+        group?: string;
+      }[] = [];
 
-    if (showAllOption) {
-      normalizedOptions.push({
-        value: allOptionValue === "" ? EMPTY_VALUE_SENTINEL : String(allOptionValue),
-        label: allOptionLabel,
-        disabled: false,
-      });
-    }
+      if (showAllOption) {
+        normalizedOptions.push({
+          value: allOptionValue === "" ? EMPTY_VALUE_SENTINEL : String(allOptionValue),
+          label: allOptionLabel,
+          disabled: false,
+        });
+      }
 
-    if (options && Array.isArray(options)) {
-      options.forEach((opt) => {
-        if (typeof opt === "string" || typeof opt === "number") {
-          normalizedOptions.push({
-            value: String(opt),
-            label: String(opt),
-            disabled: false,
-          });
-        } else if (opt) {
-          const rawVal =
-            opt.value !== undefined
-              ? String(opt.value)
-              : opt.id !== undefined
-              ? String(opt.id)
-              : "";
-          const lbl =
-            opt.label !== undefined
-              ? opt.label
-              : opt.name !== undefined
-              ? opt.name
-              : rawVal;
+      if (options && Array.isArray(options)) {
+        options.forEach((opt) => {
+          if (typeof opt === "string" || typeof opt === "number") {
+            normalizedOptions.push({
+              value: String(opt),
+              label: String(opt),
+              disabled: false,
+            });
+          } else if (opt) {
+            const rawVal =
+              opt.value !== undefined
+                ? String(opt.value)
+                : opt.id !== undefined
+                ? String(opt.id)
+                : "";
+            const lbl =
+              opt.label !== undefined
+                ? opt.label
+                : opt.name !== undefined
+                ? opt.name
+                : rawVal;
 
-          const val = rawVal === "" ? EMPTY_VALUE_SENTINEL : rawVal;
+            const val = rawVal === "" ? EMPTY_VALUE_SENTINEL : rawVal;
 
-          normalizedOptions.push({
-            value: val,
-            label: lbl,
-            description: opt.description,
-            icon: opt.icon,
-            disabled: Boolean(opt.disabled),
-            group: opt.group,
-          });
-        }
-      });
-    }
+            normalizedOptions.push({
+              value: val,
+              label: lbl,
+              description: opt.description,
+              icon: opt.icon,
+              disabled: Boolean(opt.disabled),
+              group: opt.group,
+            });
+          }
+        });
+      }
+
+      return normalizedOptions;
+    }, [allOptionLabel, allOptionValue, options, showAllOption]);
 
     const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const deferredSearchQuery = useDeferredValue(searchQuery);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const searchViewportRef = useRef<HTMLDivElement>(null);
+    const [searchViewportHeight, setSearchViewportHeight] = useState<number>();
+
+    useEffect(() => {
+      if (!isOpen || !searchable) return;
+
+      const animationFrame = window.requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+
+        const viewportHeight = searchViewportRef.current?.getBoundingClientRect().height;
+        if (viewportHeight) setSearchViewportHeight(viewportHeight);
+      });
+
+      return () => window.cancelAnimationFrame(animationFrame);
+    }, [isOpen, searchable]);
+
     const [uncontrolledValue, setUncontrolledValue] = useState<string>(
       defaultValue !== undefined ? String(defaultValue) : ""
     );
@@ -270,24 +304,45 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
     const shouldRenderWrapper = Boolean(label || errorMessage || helperText);
     const hasValue = isOptionSelected && currentValue !== "";
 
-    // Group options if any option has group
-    const groupedOptions = normalizedOptions.reduce<Record<string, typeof normalizedOptions>>(
-      (acc, opt) => {
-        const grp = opt.group || "__default__";
-        if (!acc[grp]) acc[grp] = [];
-        acc[grp].push(opt);
-        return acc;
-      },
-      {}
-    );
+    const filteredOptions = useMemo(() => {
+      const query = deferredSearchQuery.trim().toLocaleLowerCase();
+      if (!searchable || !query) return normalizedOptions;
 
-    const hasMultipleGroups = Object.keys(groupedOptions).length > 1;
+      return normalizedOptions.filter((option) => {
+        const labelText =
+          typeof option.label === "string" || typeof option.label === "number"
+            ? String(option.label)
+            : "";
+
+        return (labelText + " " + option.value).toLocaleLowerCase().includes(query);
+      });
+    }, [deferredSearchQuery, normalizedOptions, searchable]);
+
+    // Group only visible options, preserving the original option order.
+    const groupedOptions = useMemo(
+      () =>
+        filteredOptions.reduce<Record<string, typeof filteredOptions>>((acc, opt) => {
+          const grp = opt.group || "__default__";
+          if (!acc[grp]) acc[grp] = [];
+          acc[grp].push(opt);
+          return acc;
+        }, {}),
+      [filteredOptions]
+    );
+    const groupEntries = useMemo(() => Object.entries(groupedOptions), [groupedOptions]);
+    const hasMultipleGroups = groupEntries.length > 1;
 
     const renderControl = (
       <div className={cn("relative w-full", !shouldRenderWrapper && containerClassName)}>
         <SelectPrimitive.Root
           open={isOpen}
-          onOpenChange={setIsOpen}
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) {
+              setSearchQuery("");
+              setSearchViewportHeight(undefined);
+            }
+          }}
           value={internalValue}
           defaultValue={internalDefaultValue}
           onValueChange={handleValueChange}
@@ -340,7 +395,7 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                   onClick={handleClear}
                   className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
-                  <X size={14} />
+                  <X size={14} className="cursor-pointer" aria-hidden="true" />
                 </span>
               )}
               <SelectPrimitive.Icon asChild>
@@ -366,14 +421,51 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                 contentClassName
               )}
             >
+              {searchable && options && (
+                <div className="p-2 border-b border-slate-100 bg-white">
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      aria-hidden="true"
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    />
+                    <input
+                      ref={searchInputRef}
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      onKeyDownCapture={stopPropagation}
+                      onKeyUpCapture={stopPropagation}
+                      onKeyDown={stopPropagation}
+                      onPointerDown={stopPropagation}
+                      placeholder={searchPlaceholder}
+                      aria-label={searchPlaceholder}
+                      autoComplete="off"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-slate-50 pl-8 pr-2.5 text-xs text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/15"
+                    />
+                  </div>
+                </div>
+              )}
+
               <SelectPrimitive.ScrollUpButton className="flex items-center justify-center h-6 bg-white text-slate-500 cursor-default">
                 <ChevronUp size={14} />
               </SelectPrimitive.ScrollUpButton>
 
-              <SelectPrimitive.Viewport className="p-1 space-y-0.5 overscroll-contain">
-                {options && normalizedOptions.length > 0 ? (
+              <SelectPrimitive.Viewport
+                ref={searchViewportRef}
+                style={
+                  searchable && searchViewportHeight
+                    ? { height: searchViewportHeight }
+                    : undefined
+                }
+                className={cn(
+                  "p-1 space-y-0.5 overscroll-contain",
+                  searchable && options && "max-h-56"
+                )}
+              >
+                {options && filteredOptions.length > 0 ? (
                   hasMultipleGroups ? (
-                    Object.entries(groupedOptions).map(([grp, groupOpts], grpIdx) => (
+                    groupEntries.map(([grp, groupOpts], grpIdx) => (
                       <React.Fragment key={grp}>
                         {grp !== "__default__" && (
                           <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -392,13 +484,13 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                             {opt.label}
                           </SelectItem>
                         ))}
-                        {grpIdx < Object.keys(groupedOptions).length - 1 && (
+                        {grpIdx < groupEntries.length - 1 && (
                           <div className="h-px bg-slate-100 my-1 -mx-1" />
                         )}
                       </React.Fragment>
                     ))
                   ) : (
-                    normalizedOptions.map((opt) => (
+                    filteredOptions.map((opt) => (
                       <SelectItem
                         key={opt.value}
                         value={opt.value}
@@ -411,6 +503,10 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                       </SelectItem>
                     ))
                   )
+                ) : options && normalizedOptions.length > 0 && searchable ? (
+                  <div className="px-3 py-6 text-center text-xs text-slate-400">
+                    No options found
+                  </div>
                 ) : (
                   children
                 )}

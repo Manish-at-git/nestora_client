@@ -8,6 +8,10 @@ export const API_BASE_URL = `${BACKEND_URL}/api`;
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME || "nestora_csrf";
 const UNSAFE_METHODS = new Set(["post", "put", "patch", "delete"]);
 
+const GENERIC_API_ERROR = "Something went wrong. Please try again.";
+const SERVICE_UNAVAILABLE_ERROR = "The service is temporarily unavailable. Please try again later.";
+
+const isHtmlDocument = (value: string): boolean => /<\s*(!doctype|html|head|body)\b/i.test(value);
 /**
  * Session cookies are HttpOnly, so the API client keeps only an in-memory
  * authenticated flag. Protected requests are rejected locally until the auth
@@ -65,17 +69,21 @@ const getCookieValue = (name: string): string | undefined => {
 export const hasSessionCookieHint = (): boolean => Boolean(getCookieValue(CSRF_COOKIE_NAME));
 
 export const formatApiErrorDetail = (detail: ApiErrorDetail | any): string => {
-  if (detail == null) return "Something went wrong. Please try again.";
-  if (typeof detail === "string") return detail;
-  if (typeof detail.message === "string") return detail.message;
+  if (detail == null) return GENERIC_API_ERROR;
+  // Hosting providers and proxies may return an HTML error page instead of
+  // our API envelope. Never place that document in the application UI.
+  if (typeof detail === "string") {
+    return isHtmlDocument(detail) ? SERVICE_UNAVAILABLE_ERROR : detail;
+  }
+  if (typeof detail.message === "string") return formatApiErrorDetail(detail.message);
   if (detail.detail != null) return formatApiErrorDetail(detail.detail);
   if (Array.isArray(detail))
     return detail
-      .map((e) => (e && typeof e.msg === "string" ? e.msg : JSON.stringify(e)))
+      .map((error) => formatApiErrorDetail(error))
       .filter(Boolean)
       .join(" ");
-  if (detail && typeof detail.msg === "string") return detail.msg;
-  return String(detail);
+  if (detail && typeof detail.msg === "string") return formatApiErrorDetail(detail.msg);
+  return GENERIC_API_ERROR;
 };
 
 export const apiClient = axios.create({

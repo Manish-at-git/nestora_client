@@ -1307,11 +1307,13 @@ export const DesignSystemPage: React.FC = () => {
                         />
                       </FormField>
 
-                      <FormField label="Holding Entity (Clearable & Placeholder)">
+                      <FormField label="Holding Entity (Searchable, Clearable & Placeholder)">
                         <Select
                           value={selectedEntity}
                           onChange={(e: any) => setSelectedEntity(typeof e === "string" ? e : (e?.target?.value ?? ""))}
                           placeholder="Choose a management entity..."
+                          searchable
+                          searchPlaceholder="Search management entities..."
                           clearable
                           options={[
                             { value: "greenfield", label: "Greenfield Property Management Ltd." },
