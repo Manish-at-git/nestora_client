@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { FormField } from "@/components/common/FormField";
 import { FormModal } from "@/components/common/FormModal";
@@ -14,6 +13,13 @@ import {
 } from "lucide-react";
 import apiClient, { formatApiErrorDetail } from "@/services/api/apiClient";
 import { unwrapApiData } from "@/services/api/response";
+import {
+  createPropertyStructure,
+  PropertyStructureEditor,
+  type PropertyStructure,
+} from "./PropertyStructureEditor";
+
+const EMPTY_PROPERTY_STRUCTURE: PropertyStructure = { blocks: [] };
 
 export interface OnboardAssociationModalProps {
   isOpen: boolean;
@@ -33,9 +39,9 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
   const [onboardAssociation, { isLoading: isOnboarding }] = useOnboardAssociationMutation();
 
   const [entityId, setEntityId] = useState("");
-  const [numBlocks, setNumBlocks] = useState("");
-  const [floorsPerBlock, setFloorsPerBlock] = useState("");
-  const [unitsPerFloor, setUnitsPerFloor] = useState("");
+  const [propertyStructure, setPropertyStructure] = useState<PropertyStructure>(
+    EMPTY_PROPERTY_STRUCTURE
+  );
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreviewUrl, setCsvPreviewUrl] = useState("");
   const [contractFile, setContractFile] = useState<File | null>(null);
@@ -68,12 +74,13 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
 
   const handleEntityChange = (val: string) => {
     setEntityId(val);
-    setErrors((prev) => {
-      if (!prev.entityId) return prev;
-      const next = { ...prev };
-      delete next.entityId;
-      return next;
-    });
+    setCsvFile(null);
+    setCsvPreviewUrl("");
+    setContractFile(null);
+    setContractPreviewUrl("");
+    setPropertyStructure(EMPTY_PROPERTY_STRUCTURE);
+    setIsAnalyzingWorkbook(false);
+    setErrors({});
   };
 
   const handleCsvChange = async (file: File | null, url: string) => {
@@ -86,7 +93,13 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
       return next;
     });
 
-    if (!file) return;
+    if (!file) {
+      setPropertyStructure(EMPTY_PROPERTY_STRUCTURE);
+      setContractFile(null);
+      setContractPreviewUrl("");
+      setIsAnalyzingWorkbook(false);
+      return;
+    }
     try {
       setIsAnalyzingWorkbook(true);
       const workbook = new FormData();
@@ -94,14 +107,12 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
       const response = await apiClient.post("/admin/associations/onboard/preview", workbook, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      const metrics = unwrapApiData(response.data as { data: {
-        num_blocks: number;
-        floors_per_block: number;
-        units_per_floor: number;
-      } });
-      setNumBlocks(String(metrics.num_blocks || ""));
-      setFloorsPerBlock(String(metrics.floors_per_block || ""));
-      setUnitsPerFloor(String(metrics.units_per_floor || ""));
+      const metrics = unwrapApiData(response.data as { data: { blocks: Array<{ name: string; floors: Array<{ name: string; unit_count: number }>; unit_count: number }> } });
+      const selectedEntity = entities.find((entity) => entity.id === entityId);
+      const isCondominium = selectedEntity?.entity_type_name?.trim().toLowerCase() === "condominium";
+      setPropertyStructure({ blocks: metrics.blocks.map((block, blockIndex) => isCondominium
+        ? { id: "block-" + blockIndex, name: block.name, floors: block.floors.map((floor, floorIndex) => ({ id: "floor-" + blockIndex + "-" + floorIndex, name: floor.name, unit_count: String(floor.unit_count) })) }
+        : { id: "block-" + blockIndex, name: block.name, unit_count: String(block.unit_count) }) });
     } catch (err: any) {
       toast.error(formatApiErrorDetail(err?.response?.data || "Could not read Unit Details from this workbook."));
     } finally {
@@ -119,6 +130,17 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
       setErrors({ csvFile: "Please upload the completed onboarding Excel file" });
       return false;
     }
+    const selectedEntity = entities.find((entity) => entity.id === entityId);
+    const isCondominium = selectedEntity?.entity_type_name?.trim().toLowerCase() === "condominium";
+    const invalidStructure = !propertyStructure.blocks.length || propertyStructure.blocks.some((block) =>
+      !block.name.trim() || (isCondominium
+        ? !block.floors?.length || block.floors.some((floor) => !floor.name.trim() || !Number.isInteger(Number(floor.unit_count)) || Number(floor.unit_count) < 1)
+        : !Number.isInteger(Number(block.unit_count)) || Number(block.unit_count) < 1)
+    );
+    if (invalidStructure) {
+      setErrors({ propertyStructure: "Enter a block name and a positive unit count for every level" });
+      return false;
+    }
     setErrors({});
     return true;
   };
@@ -130,9 +152,14 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
     try {
       const formData = new FormData();
       formData.append("entity_id", entityId);
-      if (numBlocks) formData.append("num_blocks", numBlocks);
-      if (floorsPerBlock) formData.append("floors_per_block", floorsPerBlock);
-      if (unitsPerFloor) formData.append("units_per_floor", unitsPerFloor);
+      formData.append("property_structure", JSON.stringify({
+        blocks: propertyStructure.blocks.map((block) => ({
+          name: block.name.trim(),
+          ...(block.floors
+            ? { floors: block.floors.map((floor) => ({ name: floor.name.trim(), unit_count: Number(floor.unit_count) })) }
+            : { unit_count: Number(block.unit_count) }),
+        })),
+      }));
       if (csvFile) formData.append("csv_file", csvFile);
       if (contractFile) formData.append("contract_file", contractFile);
 
@@ -149,9 +176,7 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
 
   const handleClose = () => {
     setEntityId("");
-    setNumBlocks("");
-    setFloorsPerBlock("");
-    setUnitsPerFloor("");
+    setPropertyStructure(EMPTY_PROPERTY_STRUCTURE);
     setCsvFile(null);
     setCsvPreviewUrl("");
     setContractFile(null);
@@ -161,10 +186,14 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
     onClose();
   };
 
-  const calculatedTotalUnits =
-    numBlocks && floorsPerBlock && unitsPerFloor
-      ? parseInt(numBlocks, 10) * parseInt(floorsPerBlock, 10) * parseInt(unitsPerFloor, 10)
-      : null;
+  const selectedEntity = entities.find((entity) => entity.id === entityId);
+  const isCondominium = selectedEntity?.entity_type_name?.trim().toLowerCase() === "condominium";
+  const calculatedTotalUnits = propertyStructure.blocks.reduce(
+    (total, block) => total + (isCondominium
+      ? (block.floors || []).reduce((floorTotal, floor) => floorTotal + (Number(floor.unit_count) || 0), 0)
+      : Number(block.unit_count) || 0),
+    0
+  );
 
   const availableEntities = entities.filter((entity) => !entity.is_onboarded);
   const entityOptions = [
@@ -250,8 +279,11 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
                 // FileUploadZone calls onChange after onUpload with the preview
                 // URL. Keep the File object for FormData submission; clear it
                 // only when the user removes the uploaded file.
+                if (!url) {
+                  void handleCsvChange(null, "");
+                  return;
+                }
                 setCsvPreviewUrl(url);
-                if (!url) setCsvFile(null);
                 setErrors((prev) => {
                   if (!prev.csvFile) return prev;
                   const next = { ...prev };
@@ -271,56 +303,28 @@ export const OnboardAssociationModal: React.FC<OnboardAssociationModalProps> = (
               error={Boolean(errors.csvFile)}
             />
             {isAnalyzingWorkbook && (
-              <p className="text-xs text-slate-500">Reading Unit Details to fill the building fields...</p>
+              <p className="text-xs text-slate-500">Reading the property structure from this workbook...</p>
             )}
           </FormField>
         </div>
+        <PropertyStructureEditor
+          value={propertyStructure}
+          isCondominium={isCondominium}
+          error={errors.propertyStructure}
+        />
 
-        {/* 3-Column Grid: Number of Blocks, Floors per Block, Units per Floor */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-          <FormField label="Number of Blocks">
-            <Input
-              type="number"
-              min="0"
-              placeholder="e.g. 2"
-              value={numBlocks}
-              onChange={(e) => setNumBlocks(e.target.value)}
-              disabled={isOnboarding}
-            />
-          </FormField>
-          <FormField label="Floors per Block">
-            <Input
-              type="number"
-              min="0"
-              placeholder="e.g. 5"
-              value={floorsPerBlock}
-              onChange={(e) => setFloorsPerBlock(e.target.value)}
-              disabled={isOnboarding}
-            />
-          </FormField>
-          <FormField label="Units per Floor">
-            <Input
-              type="number"
-              min="0"
-              placeholder="e.g. 4"
-              value={unitsPerFloor}
-              onChange={(e) => setUnitsPerFloor(e.target.value)}
-              disabled={isOnboarding}
-            />
-          </FormField>
-        </div>
+        {/* Calculated total */}
 
-        {/* Calculated Total Units Banner */}
-        {calculatedTotalUnits !== null && !isNaN(calculatedTotalUnits) && (
+        {calculatedTotalUnits > 0 && (
           <div className="bg-indigo-50/80 border border-indigo-100 text-indigo-900 px-4 py-3 rounded-xl flex items-center justify-between transition-all animate-in fade-in duration-200">
             <div className="flex items-center gap-2">
               <Calculator size={16} className="text-indigo-600" />
               <span className="font-semibold text-xs text-indigo-900">
-                Calculated Total Units
+                Calculated Total {isCondominium ? "Units" : "Homes"}
               </span>
             </div>
             <span className="text-sm font-bold text-indigo-700 bg-white px-2.5 py-0.5 rounded-lg border border-indigo-100 shadow-2xs">
-              {calculatedTotalUnits} Units
+              {calculatedTotalUnits} {isCondominium ? "Units" : "Homes"}
             </span>
           </div>
         )}
