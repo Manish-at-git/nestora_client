@@ -17,8 +17,8 @@ export const DEFAULT_START_TIME = "09:00";
 export const DEFAULT_END_TIME = "18:00";
 
 export const STATUS_HEADER_CLASS: Record<string, string> = {
-  Active: "bg-indigo-600",
-  Used: "bg-amber-500",
+  Active: "bg-blue-600",
+  Used: "bg-emerald-600",
   Expired: "bg-rose-500",
   Cancelled: "bg-rose-500",
 };

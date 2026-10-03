@@ -19,6 +19,18 @@ export const ASSOCIATION_DIRECTORY_ROLE_CODES = [
   ROLE_CODE.BOARD_MEMBER,
 ] as const;
 
+export const RESIDENT_VISITOR_ROLE_CODES = [
+  ROLE_CODE.HOMEOWNER,
+  ROLE_CODE.TENANT,
+  ROLE_CODE.BOARD_MEMBER,
+  ROLE_CODE.COMMITTEE_MEMBER,
+] as const;
+
+export const SECURITY_VISITOR_ROLE_CODES = [ROLE_CODE.SECURITY] as const;
+
+export const isResidentVisitorRole = (roleCode?: string): boolean =>
+  RESIDENT_VISITOR_ROLE_CODES.some((code) => code === roleCode);
+
 /** Roles allowed to operate the visitor gate workflows. */
 export const isVisitorOperationsRole = (roleCode?: string): boolean =>
   roleCode === ROLE_CODE.SECURITY ||

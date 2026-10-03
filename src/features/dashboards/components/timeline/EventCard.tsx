@@ -9,6 +9,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/cloudUploader";
+import { EventPassActions, type EventItem as EventModuleItem } from "@/features/events";
 
 export interface EventItem {
   id: string | number;
@@ -20,6 +21,10 @@ export interface EventItem {
   location?: string;
   is_paid?: boolean;
   fee_amount?: number | string;
+  has_pass?: boolean;
+  pass_price?: number;
+  max_passes_per_user?: number;
+  my_pass?: { id: string; total_passes: number; remaining_passes: number; pass_code: string } | null;
   description?: string;
   is_registration_required?: boolean;
   registration_deadline?: string;
@@ -148,7 +153,9 @@ export const EventCard: React.FC<EventCardProps> = ({
         )}
 
         {/* Registration / RSVP Buttons */}
-        {item.is_registration_required ? (
+        {item.has_pass ? (
+          <EventPassActions event={item as unknown as EventModuleItem} />
+        ) : item.is_registration_required ? (
           <div className="pt-4 border-t border-slate-100 mb-5">
             <button
               onClick={() => onRSVP(item.id, "going")}
@@ -239,4 +246,3 @@ export const EventCard: React.FC<EventCardProps> = ({
 };
 
 export default EventCard;
-

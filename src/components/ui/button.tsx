@@ -19,6 +19,7 @@ const buttonVariants = cva(
         dangerGhost: "text-clay hover:bg-clay-soft/50 hover:text-clay-hover",
       },
       size: {
+        sm: "h-8 rounded-lg px-3.5 text-sm",
         md: "h-11 px-5 py-2.5",
         default: "h-9 rounded-lg px-3.5 text-xs",
         lg: "h-12 rounded-xl px-7 text-base",

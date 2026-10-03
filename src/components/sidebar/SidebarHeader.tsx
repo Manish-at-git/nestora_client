@@ -19,10 +19,12 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
       )}
     >
       {!sidebarCollapsed && (
-        <div className="flex items-center gap-2.5">
-          <span className="font-display italic text-2xl font-bold tracking-tight text-white select-none">
-            Nestora
-          </span>
+        <div className="min-w-0 flex-1 pr-2">
+          <img
+            src="/logo.png"
+            alt="Nestora"
+            className="block h-auto w-full select-none object-contain object-left"
+          />
         </div>
       )}
       <button

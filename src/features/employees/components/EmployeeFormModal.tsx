@@ -13,6 +13,7 @@ import {
   useGetLocationRegionsQuery,
 } from "@/features/locations/api/locationsApi";
 import { ROLES_STRING } from "@/lib/staticData";
+import { isPhoneNumber, isPincode } from "@/utils/validation";
 import { useGetRolesQuery } from "@/features/roles/api/rolesApi";
 import { useGetAssociationsQuery } from "@/features/associations/api/associationsApi";
 import {
@@ -146,6 +147,15 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
     }
   };
 
+  const handlePhoneChange = (
+    field: "contact_number" | "emergency_contact_number",
+    value: string
+  ) => {
+    const hasCountryCode = value.startsWith("+");
+    const digits = value.replace(/\D/g, "").slice(0, 15);
+    handleFieldChange(field, `${hasCountryCode ? "+" : ""}${digits}`);
+  };
+
   const validate = () => {
     if (!isEditMode) {
       if (!formData.first_name.trim()) {
@@ -167,6 +177,12 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
       }
       if (!formData.contact_number.trim()) {
         setErrors({ contact_number: "Contact number is required" });
+        return false;
+      }
+      if (!isPhoneNumber(formData.contact_number)) {
+        setErrors({
+          contact_number: "Please enter a valid phone number",
+        });
         return false;
       }
       if (!formData.role_id) {
@@ -191,6 +207,19 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
       }
       if (!formData.pincode.trim()) {
         setErrors({ pincode: "Pincode is required" });
+        return false;
+      }
+      if (!isPincode(formData.pincode)) {
+        setErrors({ pincode: "Pincode must be exactly 6 digits" });
+        return false;
+      }
+      if (
+        formData.emergency_contact_number?.trim() &&
+        !isPhoneNumber(formData.emergency_contact_number)
+      ) {
+        setErrors({
+          emergency_contact_number: "Please enter a valid phone number",
+        });
         return false;
       }
     } else {
@@ -280,7 +309,6 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
     ROLES_STRING.TENANT,
     ROLES_STRING.BOARD_MEMBER,
     ROLES_STRING.COMMITTEE_MEMBER,
-    ROLES_STRING.SECURITY,
     ROLES_STRING.SUPER_ADMIN,
   ]);
 
@@ -378,8 +406,10 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                   placeholder="+91 98765 43210"
                   value={formData.contact_number}
                   onChange={(e) =>
-                    handleFieldChange("contact_number", e.target.value)
+                    handlePhoneChange("contact_number", e.target.value)
                   }
+                  inputMode="tel"
+                  maxLength={16}
                   disabled={isSaving}
                 />
               </FormField>
@@ -543,8 +573,13 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                     placeholder="e.g. 400001"
                     value={formData.pincode}
                     onChange={(e) =>
-                      handleFieldChange("pincode", e.target.value)
+                      handleFieldChange(
+                        "pincode",
+                        e.target.value.replace(/\D/g, "").slice(0, 6)
+                      )
                     }
+                    inputMode="numeric"
+                    maxLength={6}
                     disabled={isSaving}
                   />
                 </FormField>
@@ -572,17 +607,22 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                   />
                 </FormField>
 
-                <FormField label="Emergency Contact Phone">
+                <FormField
+                  label="Emergency Contact Phone"
+                  error={errors.emergency_contact_number}
+                >
                   <Input
                     type="tel"
                     placeholder="+91 98765 43210"
                     value={formData.emergency_contact_number || ""}
                     onChange={(e) =>
-                      handleFieldChange(
+                      handlePhoneChange(
                         "emergency_contact_number",
                         e.target.value
                       )
                     }
+                    inputMode="tel"
+                    maxLength={16}
                     disabled={isSaving}
                   />
                 </FormField>

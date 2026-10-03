@@ -23,9 +23,9 @@ interface PreApprovedVisitorTableProps {
 }
 
 const statusVariant = (status: VisitorPassStatus) => {
-  if (status === "Active") return "success";
-  if (status === "Used") return "info";
-  if (status === "Cancelled") return "danger";
+  if (status === "Active") return "info";
+  if (status === "Used") return "success";
+  if (status === "Expired" || status === "Cancelled") return "danger";
   return "neutral";
 };
 
@@ -50,7 +50,7 @@ export const PreApprovedVisitorTable: React.FC<PreApprovedVisitorTableProps> = (
       setVisitorToCancel(null);
     } catch (error: any) {
       toast.error(
-        error?.data?.detail || error?.data || error?.message || "Failed to cancel visitor pass",
+        error?.data?.detail || error?.data || error?.message || "Failed to cancel pre-approved visitor",
       );
     }
   };
@@ -160,8 +160,8 @@ export const PreApprovedVisitorTable: React.FC<PreApprovedVisitorTableProps> = (
             canDelete={canDelete}
             reserveViewSlot
             reserveDeleteSlot={reserveCancelSlot}
-            viewTooltip="View visitor pass"
-            deleteTooltip="Cancel visitor pass"
+            viewTooltip="View pre-approved visitor"
+            deleteTooltip="Cancel pre-approved visitor"
           />
         ),
       },
@@ -188,8 +188,8 @@ export const PreApprovedVisitorTable: React.FC<PreApprovedVisitorTableProps> = (
         enableSorting
         pagination={{ isServer: false, pageSize: 10, pageSizeOptions: [10, 25, 50] }}
         isLoading={isLoading}
-        emptyTitle="No visitor passes found"
-        emptyMessage="Create a visitor pass in advance for quick entry at the gate."
+        emptyTitle="No pre-approved visitors found"
+        emptyMessage="Pre-approve a visitor in advance for quick gate entry."
         emptyActionLabel={canCreate ? "+ Add New Visitor" : undefined}
         onEmptyAction={canCreate ? onAdd : undefined}
         headerActions={headerAction}
@@ -199,13 +199,13 @@ export const PreApprovedVisitorTable: React.FC<PreApprovedVisitorTableProps> = (
         isOpen={Boolean(visitorToCancel)}
         onClose={() => setVisitorToCancel(null)}
         onConfirm={confirmCancel}
-        title="Cancel Visitor Pass"
+        title="Cancel Pre-Approved Visitor"
         description={
           visitorToCancel
-            ? `Cancel the active pass for ${visitorToCancel.visitor_name}? It can no longer be used at the gate.`
+            ? `Cancel the active approval for ${visitorToCancel.visitor_name}? They can no longer enter at the gate.`
             : undefined
         }
-        confirmText="Cancel Pass"
+        confirmText="Cancel Approval"
         variant="warning"
         isLoading={isCancelling}
       />

@@ -17,6 +17,8 @@ export interface TimePickerProps {
   popoverClassName?: string;
   id?: string;
   presets?: string[];
+  /** Earliest selectable 24-hour time, for example "14:30". */
+  minTime?: string;
 }
 
 const DEFAULT_PRESETS_12H = [
@@ -99,25 +101,31 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   popoverClassName,
   id,
   presets = DEFAULT_PRESETS_12H,
+  minTime,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const parsed = useMemo(() => parseTimeString(value), [value]);
+  const minimum = useMemo(() => parseTimeString(minTime), [minTime]);
 
-  const [selectedHour, setSelectedHour] = useState<number>(parsed?.hour12 ?? 10);
-  const [selectedMinute, setSelectedMinute] = useState<number>(
-    parsed ? Math.round(parsed.minute / minuteStep) * minuteStep : 0
+  const [selectedHour, setSelectedHour] = useState<number>(
+    parsed?.hour12 ?? minimum?.hour12 ?? 10,
   );
-  const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">(parsed?.period ?? "AM");
+  const [selectedMinute, setSelectedMinute] = useState<number>(
+    parsed ? Math.round(parsed.minute / minuteStep) * minuteStep : minimum?.minute ?? 0,
+  );
+  const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">(
+    parsed?.period ?? minimum?.period ?? "AM",
+  );
 
   // Keep internal state in sync with external value
   useEffect(() => {
-    if (parsed) {
-      setSelectedHour(parsed.hour12);
-      setSelectedMinute(parsed.minute);
-      setSelectedPeriod(parsed.period);
-    }
-  }, [value, parsed]);
+    const nextValue = parsed || minimum;
+    if (!nextValue) return;
+    setSelectedHour(nextValue.hour12);
+    setSelectedMinute(nextValue.minute);
+    setSelectedPeriod(nextValue.period);
+  }, [parsed, minimum]);
 
   const hourList = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], []);
 
@@ -130,10 +138,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   }, [minuteStep]);
 
   const handleUpdate = (h: number, m: number, p: "AM" | "PM") => {
+    const time24 = to24HourString(h, m, p);
+    if (minimum && time24 < minimum.raw24) return;
     setSelectedHour(h);
     setSelectedMinute(m);
     setSelectedPeriod(p);
-    const time24 = to24HourString(h, m, p);
     onChange?.(time24);
   };
 
@@ -154,7 +163,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     const now = new Date();
     let h24 = now.getHours();
     let m = now.getMinutes();
-    m = Math.round(m / minuteStep) * minuteStep;
+    m = Math.ceil(m / minuteStep) * minuteStep;
     if (m === 60) {
       m = 0;
       h24 = (h24 + 1) % 24;

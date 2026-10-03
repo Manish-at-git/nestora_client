@@ -12,7 +12,7 @@ import {
 } from "@/features/auth";
 import { RoleDashboardRouter } from "./RoleDashboardRouter";
 import { AnnouncementsPage } from "@/features/announcements";
-import { EventsPage } from "@/features/events";
+import { EventsPage, EventPassPage } from "@/features/events";
 import { PollsPage } from "@/features/polls";
 import { BoardMembersPage } from "@/features/board-members";
 import { CommitteesPage } from "@/features/committees";
@@ -49,9 +49,12 @@ import {
   PreApprovedVisitorsPage,
   PublicVisitorPassPage,
   VisitorOperationsPage,
+  GateConsolePage,
+  VisitorHistoryPage,
+  VisitorManagementLandingPage,
 } from "@/features/visitor-management";
 import { ROLE_CODE } from "@/constants/roleCodes";
-import { FEATURES } from "@/constants/featureCodes";
+import { FEATURES, LEGACY_FEATURE_PATHS } from "@/constants/featureCodes";
 
 export interface AppRoute {
   path: string;
@@ -64,6 +67,10 @@ export interface AppRoute {
  * Public Authentication & Marketing Routes
  */
 export const publicRoutes: AppRoute[] = [
+  {
+    path: "/event-pass/:passId",
+    element: <EventPassPage />,
+  },
   {
     path: FEATURES.ROOT.FEATURE_PATH,
     element: <RoleRedirect />,
@@ -352,33 +359,39 @@ export const protectedAppRoutes: AppRoute[] = [
   },
   {
     path: FEATURES.VISITOR_MANAGEMENT.FEATURE_PATH,
-    element: <PreApprovedVisitorsPage />,
+    element: <VisitorManagementLandingPage />,
+  },
+  {
+    path: LEGACY_FEATURE_PATHS.VISITOR_PASSES,
+    element: <Navigate to={FEATURES.PRE_APPROVED_VISITORS.FEATURE_PATH} replace />,
+  },
+  {
+    path: FEATURES.GATE_CONSOLE.FEATURE_PATH,
+    element: <GateConsolePage />,
   },
   {
     path: FEATURES.PRE_APPROVED_VISITORS.FEATURE_PATH,
     element: <PreApprovedVisitorsPage />,
   },
   {
-    path: FEATURES.NEW_VISITOR.FEATURE_PATH,
-    element: (
-      <ModulePlaceholder
-        moduleName="visitor_management"
-        title="New Visitor Check-In"
-        description="Log walk-in guests, verify OTP passes, and process gate entries."
-      />
-    ),
-  },
-  {
     path: FEATURES.CHECK_IN.FEATURE_PATH,
-    element: <VisitorOperationsPage mode="checkin" />,
+    element: <Navigate to={FEATURES.GATE_CONSOLE.FEATURE_PATH} replace />,
   },
   {
     path: FEATURES.CHECK_OUT.FEATURE_PATH,
-    element: <VisitorOperationsPage mode="checkout" />,
+    element: <Navigate to={FEATURES.GATE_CONSOLE.FEATURE_PATH} replace />,
+  },
+  {
+    path: LEGACY_FEATURE_PATHS.GATE_CONSOLE,
+    element: <Navigate to={FEATURES.GATE_CONSOLE.FEATURE_PATH} replace />,
+  },
+  {
+    path: LEGACY_FEATURE_PATHS.ACTIVE_VISITORS,
+    element: <Navigate to={FEATURES.GATE_CONSOLE.FEATURE_PATH} replace />,
   },
   {
     path: FEATURES.VISITOR_HISTORY.FEATURE_PATH,
-    element: <VisitorOperationsPage mode="history" />,
+    element: <VisitorHistoryPage />,
   },
   {
     path: FEATURES.DELIVERY.FEATURE_PATH,

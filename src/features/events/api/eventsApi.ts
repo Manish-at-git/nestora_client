@@ -1,6 +1,39 @@
 import { baseApi } from "@/services/api/baseApi";
 import type { EventItem, EventFormData, RSVPStatus, EventComment } from "../types";
 
+export interface EventPass {
+  id: string;
+  event_id: string;
+  buyer_name?: string;
+  buyer_mobile?: string;
+  pass_code: string;
+  total_passes: number;
+  remaining_passes: number;
+  checked_in_passes: number;
+  amount_paid: number;
+  status: string;
+  is_shared?: boolean;
+  shared_from_pass_id?: string | null;
+  created_at?: string;
+  last_checked_in_at?: string | null;
+}
+
+export interface EventPassDetail {
+  pass: EventPass;
+  event: EventItem;
+  association?: { id: string; name: string; country?: string } | null;
+  transfers: Array<{ new_pass_id: string; recipient_mobile: string; count: number; created_at: string }>;
+  is_owner: boolean;
+}
+
+export interface EventPassSummary {
+  total_passes_booked: number;
+  total_active_passes: number;
+  total_checked_in: number;
+  total_revenue?: number;
+  total_pass_records: number;
+}
+
 interface ApiResponse<T> { success: boolean; data?: T; message?: string }
 
 export const eventsApi = baseApi.injectEndpoints({
@@ -124,6 +157,52 @@ export const eventsApi = baseApi.injectEndpoints({
         { type: "Events", id: eventId },
       ],
     }),
+
+    bookEventPass: builder.mutation<
+      { pass_id: string; pass_code: string; pass_link: string; total_amount: number; message: string },
+      { eventId: string | number; member_count: number; payment_method: "wallet" | "upi"; pin?: string }
+    >({
+      query: ({ eventId, ...data }) => ({ url: `/events/${eventId}/book-pass`, method: "POST", data }),
+      transformResponse: (response: ApiResponse<any>) => response.data,
+      invalidatesTags: [{ type: "Events", id: "LIST" }],
+    }),
+    getEventPass: builder.query<EventPassDetail, string>({
+      query: (passId) => ({ url: `/events/passes/${passId}`, method: "GET" }),
+      transformResponse: (response: ApiResponse<EventPassDetail>) => response.data as EventPassDetail,
+      providesTags: (_result, _error, passId) => [{ type: "Events", id: `PASS_${passId}` }],
+    }),
+    shareEventPass: builder.mutation<
+      { new_pass_id: string; new_pass_link: string; remaining_passes: number; shared_count: number; message: string },
+      { passId: string; recipient_mobile: string; count: number }
+    >({
+      query: ({ passId, ...data }) => ({ url: `/events/passes/${passId}/share`, method: "POST", data }),
+      transformResponse: (response: ApiResponse<any>) => response.data,
+      invalidatesTags: (_result, _error, { passId }) => [
+        { type: "Events", id: `PASS_${passId}` },
+        { type: "Events", id: "LIST" },
+      ],
+    }),
+    getEventPasses: builder.query<{ event: EventItem; summary: EventPassSummary; passes: EventPass[] }, string | number>({
+      query: (eventId) => ({ url: `/admin/events/${eventId}/passes`, method: "GET" }),
+      transformResponse: (response: ApiResponse<any>) => response.data,
+      providesTags: (_result, _error, eventId) => [{ type: "Events", id: `PASSES_${eventId}` }],
+    }),
+    verifyEventPass: builder.mutation<any, { eventId: string | number; query: string }>({
+      query: ({ eventId, query }) => ({ url: `/admin/events/${eventId}/passes/verify-scan`, method: "POST", data: { query } }),
+      transformResponse: (response: ApiResponse<any>) => response.data,
+    }),
+    checkInEventPass: builder.mutation<
+      { admitted_now: number; remaining_passes: number; checked_in_passes: number; message: string },
+      { eventId: string | number; passId: string; admit_count: number; notes?: string }
+    >({
+      query: ({ eventId, passId, ...data }) => ({ url: `/admin/events/${eventId}/passes/${passId}/check-in`, method: "POST", data }),
+      transformResponse: (response: ApiResponse<any>) => response.data,
+      invalidatesTags: (_result, _error, { eventId, passId }) => [
+        { type: "Events", id: `PASSES_${eventId}` },
+        { type: "Events", id: `PASS_${passId}` },
+        { type: "Events", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -137,4 +216,10 @@ export const {
   useToggleLikeEventMutation,
   useGetEventCommentsQuery,
   useAddEventCommentMutation,
+  useBookEventPassMutation,
+  useGetEventPassQuery,
+  useShareEventPassMutation,
+  useGetEventPassesQuery,
+  useVerifyEventPassMutation,
+  useCheckInEventPassMutation,
 } = eventsApi;

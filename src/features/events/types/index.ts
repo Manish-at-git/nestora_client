@@ -27,6 +27,10 @@ export interface EventItem {
   status?: "Draft" | "Published" | "Cancelled" | string;
   is_paid?: boolean;
   fee_amount?: number;
+  has_pass?: boolean;
+  pass_price?: number;
+  max_passes_per_user?: number;
+  my_pass?: { id: string; total_passes: number; remaining_passes: number; pass_code: string } | null;
   is_registration_required?: boolean;
   registration_deadline?: string;
   max_capacity?: number;
@@ -64,6 +68,9 @@ export interface EventFormData {
   status?: string;
   is_paid?: boolean;
   fee_amount?: number;
+  has_pass?: boolean;
+  pass_price?: number;
+  max_passes_per_user?: number;
   is_registration_required?: boolean;
   registration_deadline?: string;
   max_capacity?: number;

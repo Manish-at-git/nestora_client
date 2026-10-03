@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Controller } from "react-hook-form";
 import { CalendarCheck, Clock, Phone, UserRound, UsersRound } from "lucide-react";
 import { toast } from "sonner";
@@ -9,11 +9,7 @@ import { Select } from "@/components/ui/select";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useAppForm } from "@/hooks/useAppForm";
 import { useCreatePreApprovedVisitorMutation } from "../api";
-import {
-  DEFAULT_END_TIME,
-  DEFAULT_START_TIME,
-  VISITOR_TYPE_OPTIONS,
-} from "../constants";
+import { VISITOR_TYPE_OPTIONS } from "../constants";
 import {
   preApprovedVisitorSchema,
   type PreApprovedVisitorFormValues,
@@ -39,10 +35,10 @@ const createDefaultValues = (): PreApprovedVisitorFormValues => ({
   visitor_name: "",
   mobile: "",
   visitor_type: "",
-  visit_date: todayValue(),
-  start_time: DEFAULT_START_TIME,
-  end_time: DEFAULT_END_TIME,
-  number_of_visitors: 1,
+  visit_date: "",
+  start_time: "",
+  end_time: "",
+  number_of_visitors: undefined,
   vehicle_number: "",
   purpose: "",
   pass_type: "Single Entry",
@@ -57,11 +53,38 @@ export const PreApprovedVisitorFormModal: React.FC<
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useAppForm<PreApprovedVisitorFormValues>({
     schema: preApprovedVisitorSchema,
     defaultValues: createDefaultValues(),
   });
+  const visitDate = watch("visit_date");
+  const startTime = watch("start_time");
+  const minimumStartTime = useMemo(() => {
+    if (visitDate !== todayValue()) return undefined;
+
+    const now = new Date();
+    const nextFiveMinutes = new Date(now);
+    nextFiveMinutes.setSeconds(0, 0);
+    nextFiveMinutes.setMinutes(nextFiveMinutes.getMinutes() + (5 - (nextFiveMinutes.getMinutes() % 5)));
+    return `${String(nextFiveMinutes.getHours()).padStart(2, "0")}:${String(
+      nextFiveMinutes.getMinutes(),
+    ).padStart(2, "0")}`;
+  }, [visitDate]);
+  const minimumEndTime = useMemo(() => {
+    if (!startTime) return minimumStartTime;
+
+    const [hours, minutes] = startTime.split(":").map(Number);
+    const endMinutes = hours * 60 + minutes + 5;
+    if (endMinutes >= 24 * 60) return undefined;
+    const nextStartTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(
+      endMinutes % 60,
+    ).padStart(2, "0")}`;
+    return minimumStartTime && minimumStartTime > nextStartTime
+      ? minimumStartTime
+      : nextStartTime;
+  }, [minimumStartTime, startTime]);
 
   useEffect(() => {
     if (isOpen) reset(createDefaultValues());
@@ -83,9 +106,12 @@ export const PreApprovedVisitorFormModal: React.FC<
     activeErrorKey === field ? errors[field]?.message : undefined;
 
   const onSubmit = async (values: PreApprovedVisitorFormValues) => {
+    if (!values.number_of_visitors) return;
+
     try {
       const payload: CreatePreApprovedVisitorPayload = {
         ...values,
+        number_of_visitors: values.number_of_visitors,
         visitor_name: values.visitor_name.trim(),
         mobile: values.mobile.trim(),
         vehicle_number: values.vehicle_number?.trim() || undefined,
@@ -102,12 +128,12 @@ export const PreApprovedVisitorFormModal: React.FC<
         status: "Active",
       };
 
-      toast.success("Visitor pass created successfully");
+      toast.success("Pre-approved visitor created successfully");
       onClose();
       onCreated(createdVisitor);
     } catch (error: any) {
       toast.error(
-        error?.data?.detail || error?.data || error?.message || "Failed to create visitor pass",
+        error?.data?.detail || error?.data || error?.message || "Failed to create pre-approved visitor",
       );
     }
   };
@@ -120,11 +146,11 @@ export const PreApprovedVisitorFormModal: React.FC<
       onClose={onClose}
       onSubmit={handleSubmit(onSubmit)}
       title="Pre-Approve Visitor"
-      subtitle="Create an advance visitor pass for faster gate entry."
+      subtitle="Create an advance visitor entry for faster gate verification."
       icon={<CalendarCheck size={18} className="text-slate-800" />}
       size="2xl"
-      submitText="Generate Pass"
-      loadingText="Generating Pass..."
+      submitText="Pre-Approve Visitor"
+      loadingText="Pre-Approving Visitor..."
       isSubmitting={disabled}
       contentClassName="space-y-4"
     >
@@ -240,6 +266,7 @@ export const PreApprovedVisitorFormModal: React.FC<
                   field.onBlur();
                 }}
                 minuteStep={5}
+                minTime={minimumStartTime}
                 placeholder="Select start time"
                 disabled={disabled}
                 error={Boolean(getFieldError("start_time"))}
@@ -260,6 +287,7 @@ export const PreApprovedVisitorFormModal: React.FC<
                   field.onBlur();
                 }}
                 minuteStep={5}
+                minTime={minimumEndTime}
                 placeholder="Select end time"
                 disabled={disabled}
                 error={Boolean(getFieldError("end_time"))}

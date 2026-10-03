@@ -67,6 +67,10 @@ export interface TimelineItem {
   my_rsvp_status?: string;
   is_paid?: boolean;
   fee_amount?: number | string;
+  has_pass?: boolean;
+  pass_price?: number;
+  max_passes_per_user?: number;
+  my_pass?: { id: string; total_passes: number; remaining_passes: number; pass_code: string } | null;
   is_registration_required?: boolean;
   registration_deadline?: string;
   going_count?: number;

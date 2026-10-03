@@ -195,8 +195,8 @@ export const FEATURES = {
     FEATURE_PATH: "/visitor-management",
     FEATURE_LABEL: "Visitor Management",
   },
-  NEW_VISITOR: {
-    FEATURE_CODE: "new_visitor",
+  GATE_CONSOLE: {
+    FEATURE_CODE: "gate_console",
     FEATURE_PATH: "/visitor-management/new",
     FEATURE_LABEL: "New Visitor",
   },
@@ -430,4 +430,11 @@ export const FEATURES = {
     FEATURE_PATH: "*",
     FEATURE_LABEL: "Not Found",
   },
+} as const;
+
+/** Compatibility-only paths for retired feature records; never render these in navigation. */
+export const LEGACY_FEATURE_PATHS = {
+  VISITOR_PASSES: "/visitor-management/passes",
+  GATE_CONSOLE: "/visitor-management/gate",
+  ACTIVE_VISITORS: "/visitor-management/active",
 } as const;

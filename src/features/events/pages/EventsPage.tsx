@@ -260,6 +260,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
               event={ev}
               canEdit={canEdit(ev)}
               canDelete={canDelete(ev)}
+              canManagePasses={userIsAdmin || userIsBoard}
               onEdit={(e) => {
                 setEditingEvent(e);
                 setIsFormOpen(true);

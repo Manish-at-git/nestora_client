@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, CheckCheck, ChevronRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { FEATURES } from "@/constants/featureCodes";
 import apiClient from "@/services/api/apiClient";
 import {
   NotificationAlertSettings,
@@ -276,6 +277,9 @@ const getNotificationActionUrl = (notification: NotificationItem): string | null
   }
   if (notification.entity_type === "board_task") {
     return `/board-tasks/${entityId}`;
+  }
+  if (notification.entity_type === "visitor_visit") {
+    return `${FEATURES.PRE_APPROVED_VISITORS.FEATURE_PATH}?tab=approvals`;
   }
 
   return isInternalActionUrl(notification.action_url) ? notification.action_url : null;

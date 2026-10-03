@@ -6,3 +6,5 @@ export * from "./components/EventCard";
 export * from "./components/EventFormModal";
 export * from "./components/EventOverviewModal";
 export * from "./components/RsvpControl";
+export * from "./components/EventPassActions";
+export * from "./pages/EventPassPage";

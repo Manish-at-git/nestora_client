@@ -14,6 +14,7 @@ import {
   useGetVisitorCheckoutsQuery,
   useGetVisitorHistoryQuery,
 } from "../api";
+import { VisitorCheckoutButton } from "../components";
 
 type Mode = "checkin" | "checkout" | "history" | "delivery" | "delivery-history";
 
@@ -46,7 +47,7 @@ export const VisitorOperationsPage: React.FC<VisitorOperationsPageProps> = ({ mo
     </div>
   );
 
-  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-semibold text-slate-800">{mode === "checkin" ? "Visitors currently inside" : mode === "checkout" ? "Recent visitor check-outs" : "Visitor history"}</h2><div className="space-y-3">{visitors.map((visitor) => <div key={visitor.log_id || visitor.pass_id} className="flex items-center justify-between rounded-xl border border-slate-100 p-4"><div><p className="font-medium text-slate-800">{visitor.visitor_name}</p><p className="text-sm text-slate-500">Unit {visitor.unit_number || "—"} · {visitor.mobile} · In {formatDate(visitor.check_in)}{visitor.check_out ? ` · Out ${formatDate(visitor.check_out)}` : ""}</p></div>{mode === "checkin" && visitor.log_id && <Button disabled={isCheckingOut} onClick={async () => { try { await checkOutVisitor(visitor.log_id).unwrap(); toast.success("Visitor checked out"); } catch { toast.error("Unable to check out visitor"); } }}>Check out</Button>}</div>)}{!visitors.length && <p className="py-10 text-center text-sm text-slate-500">No visitors found.</p>}</div></div>;
+  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-semibold text-slate-800">{mode === "checkin" ? "Visitors currently inside" : mode === "checkout" ? "Recent visitor check-outs" : "Visitor history"}</h2><div className="space-y-3">{visitors.map((visitor) => <div key={visitor.log_id || visitor.pass_id} className="flex items-center justify-between rounded-xl border border-slate-100 p-4"><div><p className="font-medium text-slate-800">{visitor.visitor_name}</p><p className="text-sm text-slate-500">Unit {visitor.unit_number || "—"} · {visitor.mobile} · In {formatDate(visitor.check_in)}{visitor.check_out ? ` · Out ${formatDate(visitor.check_out)}` : ""}</p></div>{mode === "checkin" && visitor.log_id && <VisitorCheckoutButton disabled={isCheckingOut} onClick={async () => { try { await checkOutVisitor(visitor.log_id).unwrap(); toast.success("Visitor checked out"); } catch { toast.error("Unable to check out visitor"); } }} />}</div>)}{!visitors.length && <p className="py-10 text-center text-sm text-slate-500">No visitors found.</p>}</div></div>;
 };
 
 export default VisitorOperationsPage;

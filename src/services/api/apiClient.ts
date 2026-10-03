@@ -40,13 +40,16 @@ const PUBLIC_API_PATHS = [
   "/create-account",
   "/update-details-request",
   "/admin/associations/email-templates",
+  // Digital event-pass links are intentionally shareable without a signed-in session.
+  "/events/passes/",
 ];
 
 const isPublicApiRequest = (url = ""): boolean => {
   const path = url.split("?")[0].replace(/^https?:\/\/[^/]+/, "");
   return (
     PUBLIC_API_PATHS.some((publicPath) => path === publicPath || path.endsWith(publicPath)) ||
-    path.includes("/public/visitor-passes/")
+    path.includes("/public/visitor-passes/") ||
+    path.includes("/events/passes/")
   );
 };
 

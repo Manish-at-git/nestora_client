@@ -11,6 +11,7 @@ import {
   Phone,
   User as UserIcon,
   Eye,
+  Ticket,
 } from "lucide-react";
 import { FormModal, FormField, FileUploadZone } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       send_notifications: false,
       is_paid: false,
       fee_amount: undefined,
+      has_pass: false,
+      max_passes_per_user: 10,
       organizer_name: "",
       organizer_contact: "",
       status: "Published",
@@ -155,6 +158,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           send_notifications: false,
           is_paid: Boolean(initialData.is_paid),
           fee_amount: initialData.fee_amount ?? undefined,
+          has_pass: Boolean(initialData.has_pass),
+          max_passes_per_user: initialData.max_passes_per_user || 10,
           organizer_name: initialData.organizer_name || "",
           organizer_contact: initialData.organizer_contact || "",
           status: initialData.status || "Published",
@@ -176,6 +181,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           send_notifications: false,
           is_paid: false,
           fee_amount: undefined,
+          has_pass: false,
+          max_passes_per_user: 10,
           organizer_name: "",
           organizer_contact: "",
           status: "Published",
@@ -210,6 +217,9 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       send_notifications: Boolean(data.send_notifications),
       is_paid: Boolean(data.is_paid),
       fee_amount: data.is_paid && data.fee_amount ? Number(data.fee_amount) : 0,
+      has_pass: Boolean(data.is_paid && data.has_pass),
+      pass_price: data.is_paid && data.has_pass ? Number(data.fee_amount || 0) : undefined,
+      max_passes_per_user: data.is_paid && data.has_pass ? Number(data.max_passes_per_user) : 10,
       organizer_name: data.organizer_name?.trim() || undefined,
       organizer_contact: data.organizer_contact?.trim() || undefined,
       status: data.status || "Published",
@@ -611,24 +621,64 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           />
 
           {isPaid && (
-            <div className="pt-2 border-t border-slate-200/70">
+            <div className="pt-2 border-t border-slate-200/70 space-y-4">
               <FormField
-                label="Registration Fee (₹)"
+                label="Pass / Registration Fee per Member (₹)"
                 required
                 error={getFieldError("fee_amount")}
               >
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  icon={<IndianRupee size={15} />}
-                  placeholder="e.g. 25.00"
-                  disabled={isFormDisabled}
-                  {...register("fee_amount")}
-                  error={Boolean(getFieldError("fee_amount"))}
-                  size="md"
-                />
+                <div className="space-y-1.5">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    icon={<IndianRupee size={15} />}
+                    placeholder="e.g. 25.00"
+                    disabled={isFormDisabled}
+                    {...register("fee_amount")}
+                    error={Boolean(getFieldError("fee_amount"))}
+                    size="md"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Price per person. The total updates when a member selects their pass count.
+                  </p>
+                </div>
               </FormField>
+              <Controller
+                name="has_pass"
+                control={control}
+                render={({ field }) => (
+                  <Checkbox
+                    checked={Boolean(field.value)}
+                    onCheckedChange={field.onChange}
+                    disabled={isFormDisabled}
+                    label="Generate digital QR passes"
+                  />
+                )}
+              />
+              {watch("has_pass") && (
+                <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 space-y-4">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-blue-900">Digital pass instructions</p>
+                    <ul className="space-y-1 text-xs text-blue-800">
+                      <li>✓ A unique QR pass link is created after successful wallet payment.</li>
+                      <li>✓ Members can choose a pass count and see the total fee before booking.</li>
+                      <li>✓ Passes can be shared with another registered member using their mobile number.</li>
+                    </ul>
+                  </div>
+                  <FormField label="Maximum passes allowed per member" error={getFieldError("max_passes_per_user")}>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={50}
+                      icon={<Ticket size={15} />}
+                      disabled={isFormDisabled}
+                      {...register("max_passes_per_user")}
+                      error={Boolean(getFieldError("max_passes_per_user"))}
+                    />
+                  </FormField>
+                </div>
+              )}
             </div>
           )}
         </div>

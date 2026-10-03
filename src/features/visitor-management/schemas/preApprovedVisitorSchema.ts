@@ -31,7 +31,7 @@ export const preApprovedVisitorSchema = z
       .string()
       .regex(timePattern, "Please select a valid end time"),
     number_of_visitors: z
-      .number()
+      .number({ required_error: "Number of visitors is required" })
       .int("Number of visitors must be a whole number")
       .min(1, "At least one visitor is required")
       .max(50, "Number of visitors cannot exceed 50"),
@@ -48,6 +48,17 @@ export const preApprovedVisitorSchema = z
     pass_type: z.string().default("Single Entry"),
   })
   .superRefine((values, context) => {
+    if (values.visit_date === todayValue()) {
+      const scheduledStart = new Date(`${values.visit_date}T${values.start_time}:00`);
+      if (scheduledStart <= new Date()) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["start_time"],
+          message: "Start time must be in the future for today's visit",
+        });
+      }
+    }
+
     if (values.start_time >= values.end_time) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -64,7 +75,7 @@ export interface PreApprovedVisitorFormValues {
   visit_date: string;
   start_time: string;
   end_time: string;
-  number_of_visitors: number;
+  number_of_visitors?: number;
   vehicle_number?: string;
   purpose?: string;
   pass_type: string;

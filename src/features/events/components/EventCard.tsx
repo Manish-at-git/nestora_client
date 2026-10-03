@@ -1,9 +1,10 @@
 import React from "react";
-import { Calendar, MapPin, Users, Edit3, Trash2, Heart, MessageSquare, Pencil } from "lucide-react";
+import { Calendar, MapPin, Users, Edit3, Trash2, Heart, MessageSquare, Pencil, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resolveMediaUrl } from "@/lib/cloudUploader";
 import { formatDateTime } from "@/utils";
 import { RsvpControl } from "./RsvpControl";
+import { EventPassActions } from "./EventPassActions";
 import { useToggleLikeEventMutation } from "../api/eventsApi";
 import type { EventItem } from "../types";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ export interface EventCardProps {
   canEdit?: boolean;
   canDelete?: boolean;
   canEditOrDelete?: boolean;
+  canManagePasses?: boolean;
   onEdit?: (event: EventItem) => void;
   onDelete?: (id: string | number) => void;
   onOverview?: (event: EventItem) => void;
@@ -23,6 +25,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   canEdit,
   canDelete,
   canEditOrDelete,
+  canManagePasses,
   onEdit,
   onDelete,
   onOverview,
@@ -62,16 +65,23 @@ export const EventCard: React.FC<EventCardProps> = ({
                 {event.category}
               </span>
             )}
-            <span
-              className={cn(
-                "absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide shadow-xs",
-                isPaid
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white/90 text-slate-700 backdrop-blur-xs"
+            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              {event.has_pass && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white shadow-xs">
+                  <QrCode size={11} /> QR Pass
+                </span>
               )}
-            >
-              {isPaid ? `₹${event.fee_amount}` : "Free"}
-            </span>
+              <span
+                className={cn(
+                  "px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide shadow-xs",
+                  isPaid
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white/90 text-slate-700 backdrop-blur-xs"
+                )}
+              >
+                {isPaid ? `₹${event.fee_amount}` : "Free"}
+              </span>
+            </div>
           </div>
         ) : (
           <div
@@ -84,16 +94,23 @@ export const EventCard: React.FC<EventCardProps> = ({
                 {event.category}
               </span>
             )}
-            <span
-              className={cn(
-                "absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide",
-                isPaid
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-200/80 text-slate-700"
+            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              {event.has_pass && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white shadow-xs">
+                  <QrCode size={11} /> QR Pass
+                </span>
               )}
-            >
-              {isPaid ? `₹${event.fee_amount}` : "Free"}
-            </span>
+              <span
+                className={cn(
+                  "px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide",
+                  isPaid
+                    ? "bg-emerald-600 text-white"
+                    : "bg-slate-200/80 text-slate-700"
+                )}
+              >
+                {isPaid ? `₹${event.fee_amount}` : "Free"}
+              </span>
+            </div>
           </div>
         )}
 
@@ -140,7 +157,11 @@ export const EventCard: React.FC<EventCardProps> = ({
 
       {/* RSVP Controls & Card Footer */}
       <div>
-        <RsvpControl event={event} />
+        {event.has_pass ? (
+          <EventPassActions event={event} canManage={canManagePasses} />
+        ) : (
+          <RsvpControl event={event} />
+        )}
 
         <div className="flex items-center justify-between mt-3 pt-2.5">
           {/* <div className="flex items-center gap-3">

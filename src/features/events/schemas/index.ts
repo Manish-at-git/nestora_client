@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPhoneNumber } from "@/utils/validation";
 
 export const eventSchema = z
   .object({
@@ -31,6 +32,8 @@ export const eventSchema = z
     send_notifications: z.boolean().default(false),
     is_paid: z.boolean().default(false),
     fee_amount: z.coerce.number().min(0, "Fee amount must be greater than or equal to 0.").optional(),
+    has_pass: z.boolean().default(false),
+    max_passes_per_user: z.coerce.number().int().min(1).max(50).default(10),
     organizer_name: z.string().trim().max(100).optional(),
     organizer_contact: z.string().trim().max(50).optional(),
     status: z.string().default("Published"),
@@ -87,3 +90,26 @@ export const eventSchema = z
   );
 
 export type EventFormValues = z.infer<typeof eventSchema>;
+
+export const eventPassTransferSchema = (maximumPasses: number) =>
+  z.object({
+    recipient_mobile: z
+      .string()
+      .trim()
+      .min(1, "Enter the recipient's mobile number.")
+      .max(20, "Mobile number cannot exceed 20 characters.")
+      .refine(
+        isPhoneNumber,
+        "Enter a valid mobile number with 7 to 15 digits."
+      ),
+    count: z.coerce
+      .number({ invalid_type_error: "Enter the number of passes to transfer." })
+      .int("Pass count must be a whole number.")
+      .min(1, "Transfer at least one pass.")
+      .max(maximumPasses, `You can transfer at most ${maximumPasses} pass${maximumPasses === 1 ? "" : "es"}.`),
+  });
+
+export type EventPassTransferFormValues = {
+  recipient_mobile: string;
+  count: number;
+};

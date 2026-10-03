@@ -25,7 +25,7 @@ export const VisitorPassModal: React.FC<VisitorPassModalProps> = ({
   if (!visitor) return null;
 
   const shareText = [
-    "Nestora Visitor Pass",
+    "Nestora Pre-Approved Visitor",
     `Visitor: ${visitor.visitor_name}`,
     `Pass code: ${visitor.pass_code}`,
     visitor.otp ? `Security OTP: ${visitor.otp}` : undefined,
@@ -51,13 +51,13 @@ export const VisitorPassModal: React.FC<VisitorPassModalProps> = ({
   const sharePass = async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Visitor Pass", text: shareText, url: shareUrl });
+        await navigator.share({ title: "Pre-Approved Visitor", text: shareText, url: shareUrl });
       } else {
         await navigator.clipboard.writeText(shareUrl);
-        toast.success("Visitor pass link copied for sharing");
+        toast.success("Pre-approved visitor link copied for sharing");
       }
     } catch (error: any) {
-      if (error?.name !== "AbortError") toast.error("Unable to share the visitor pass");
+      if (error?.name !== "AbortError") toast.error("Unable to share the pre-approved visitor");
     }
   };
 
@@ -75,7 +75,7 @@ export const VisitorPassModal: React.FC<VisitorPassModalProps> = ({
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 z-20 rounded-full p-2 text-white transition-colors hover:bg-white/20"
-          aria-label="Close visitor pass"
+          aria-label="Close pre-approved visitor"
         >
           <X size={20} />
         </button>
@@ -89,7 +89,7 @@ export const VisitorPassModal: React.FC<VisitorPassModalProps> = ({
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 shadow-inner backdrop-blur-md">
             <ShieldCheck size={34} />
           </div>
-          <h3 className="text-2xl font-bold tracking-tight">Visitor Pass</h3>
+          <h3 className="text-2xl font-bold tracking-tight">Pre-Approved Visitor</h3>
           <p className="mt-1 font-medium text-white/80">{visitor.status}</p>
         </div>
 
@@ -97,7 +97,7 @@ export const VisitorPassModal: React.FC<VisitorPassModalProps> = ({
           <div className="mb-4 rounded-3xl border border-slate-100 bg-white p-4 text-center shadow-xl">
             <img
               src={qrUrl}
-              alt={`QR code for visitor pass ${visitor.pass_code}`}
+              alt={`QR code for pre-approved visitor ${visitor.pass_code}`}
               className="mx-auto h-40 w-40 rounded-xl"
             />
             <div className="mt-3 inline-block rounded-full border border-slate-200 bg-slate-50 px-5 py-1.5">
@@ -166,7 +166,7 @@ export const VisitorPassModal: React.FC<VisitorPassModalProps> = ({
               className="shrink-0"
             />
             <Button type="button" onClick={sharePass} className="h-12 flex-1 rounded-2xl text-sm">
-              <Share2 size={18} /> Share Visitor Pass
+              <Share2 size={18} /> Share Pre-Approved Visitor
             </Button>
           </div>
         </div>
