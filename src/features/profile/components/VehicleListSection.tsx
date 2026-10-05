@@ -1,5 +1,5 @@
 import React from "react";
-import { Car, Bike, Plus, Edit2, Trash2, FileText, ExternalLink } from "lucide-react";
+import { Car, Bike, Plus, Edit2, Trash2, FileText, ExternalLink, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Vehicle } from "../types";
@@ -24,6 +24,9 @@ export const VehicleListSection: React.FC<VehicleListSectionProps> = ({
     }
     return <Car size={18} className="text-indigo-600" />;
   };
+
+  const formatDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleDateString() : null;
 
   return (
     <div className="bg-white rounded-2xl border border-border shadow-xs p-5 sm:p-6 space-y-5">
@@ -102,31 +105,47 @@ export const VehicleListSection: React.FC<VehicleListSectionProps> = ({
               </div>
 
               {(v.insurance_url || v.puc_url) && (
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-slate-200/60">
                   {v.insurance_url && (
-                    <a
-                      href={v.insurance_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/70 transition-colors"
-                    >
-                      <FileText size={13} />
-                      <span>Insurance Policy</span>
-                      <ExternalLink size={11} className="opacity-60" />
-                    </a>
+                    <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2">
+                      <a
+                        href={v.insurance_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-700 hover:text-blue-800"
+                      >
+                        <FileText size={13} />
+                        <span>Insurance Policy</span>
+                        <ExternalLink size={11} className="opacity-60" />
+                      </a>
+                      {formatDate(v.insurance_reminder_date) && (
+                        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-blue-800/80">
+                          <CalendarDays size={12} />
+                          Reminder: {formatDate(v.insurance_reminder_date)}
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {v.puc_url && (
-                    <a
-                      href={v.puc_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/70 transition-colors"
-                    >
-                      <FileText size={13} />
-                      <span>PUC Certificate</span>
-                      <ExternalLink size={11} className="opacity-60" />
-                    </a>
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2">
+                      <a
+                        href={v.puc_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800"
+                      >
+                        <FileText size={13} />
+                        <span>PUC Certificate</span>
+                        <ExternalLink size={11} className="opacity-60" />
+                      </a>
+                      {formatDate(v.puc_reminder_date) && (
+                        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-800/80">
+                          <CalendarDays size={12} />
+                          Reminder: {formatDate(v.puc_reminder_date)}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

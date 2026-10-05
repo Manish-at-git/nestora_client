@@ -129,7 +129,7 @@ export function EventPassBookingModal({ event, onClose, onBooked }: {
                 value={count}
                 disabled={isLoading}
                 aria-label="Number of attendees"
-                className="h-8 w-12 border-0 bg-transparent px-1 text-center font-semibold shadow-none focus-visible:ring-0"
+                className="h-8 w-full appearance-none border-0 bg-transparent px-1 text-center font-semibold shadow-none [-moz-appearance:textfield] focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 onChange={(change) => updateCount(Number(change.target.value))}
               />
               <Button

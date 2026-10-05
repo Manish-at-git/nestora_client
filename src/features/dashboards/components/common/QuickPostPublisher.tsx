@@ -39,32 +39,32 @@ export const QuickPostPublisher: React.FC<QuickPostPublisherProps> = ({
         value={postText}
         onChange={(e) => onPostTextChange(e.target.value)}
       />
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-        <div className="flex gap-2">
+      <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid grid-cols-3 gap-1 sm:flex sm:gap-2">
           <button
             onClick={onOpenAnnouncementModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1 px-1 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors cursor-pointer sm:gap-1.5 sm:px-3 sm:py-1.5"
           >
             <Megaphone size={14} className="text-blue-500" /> Announcement
           </button>
           <button
             onClick={onOpenEventModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1 px-1 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors cursor-pointer sm:gap-1.5 sm:px-3 sm:py-1.5"
           >
             <CalendarIcon size={14} className="text-emerald-500" /> Event
           </button>
           <button
             onClick={onOpenPollModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1 px-1 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium transition-colors cursor-pointer sm:gap-1.5 sm:px-3 sm:py-1.5"
           >
             <CheckSquare size={14} className="text-purple-500" /> Poll
           </button>
         </div>
 
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsPublishMenuOpen(!isPublishMenuOpen)}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer sm:w-auto sm:py-1.5"
           >
             Publish <Send size={12} />
           </button>
@@ -101,4 +101,3 @@ export const QuickPostPublisher: React.FC<QuickPostPublisherProps> = ({
 };
 
 export default QuickPostPublisher;
-

@@ -35,7 +35,7 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
   return (
     <div
       key={`m-${item.id}`}
-      className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6"
+      className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm mb-6"
     >
       <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase mb-4">
         <Users size={14} className="text-purple-500" /> Association Meeting
@@ -50,9 +50,9 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
             {item.meeting_time}
           </span>
         </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <h3 className="text-xl font-display text-slate-800 mb-2">{item.title}</h3>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap justify-between items-start gap-2">
+            <h3 className="min-w-0 break-words text-xl font-display text-slate-800 mb-2">{item.title}</h3>
             {item.priority && (
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
@@ -65,7 +65,7 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
               </span>
             )}
           </div>
-          <p className="text-slate-600 text-sm mb-3">
+          <p className="break-words text-slate-600 text-sm mb-3">
             {item.description || item.agenda}
           </p>
 
@@ -98,7 +98,7 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-100">
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
               <span className="text-sm font-semibold text-slate-700 tracking-wide">
                 RSVP: Are you going?
               </span>
@@ -109,7 +109,7 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
               )}
             </div>
             <div
-              className={`flex gap-2 ${
+              className={`flex flex-wrap gap-2 ${
                 locked ? "opacity-60 pointer-events-none" : ""
               }`}
             >
@@ -152,4 +152,3 @@ export const MeetingCard: React.FC<MeetingCardProps> = ({
 };
 
 export default MeetingCard;
-

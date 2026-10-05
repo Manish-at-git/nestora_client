@@ -164,7 +164,12 @@ export const eventsApi = baseApi.injectEndpoints({
     >({
       query: ({ eventId, ...data }) => ({ url: `/events/${eventId}/book-pass`, method: "POST", data }),
       transformResponse: (response: ApiResponse<any>) => response.data,
-      invalidatesTags: [{ type: "Events", id: "LIST" }],
+      invalidatesTags: (result) => [
+        { type: "Events", id: "LIST" },
+        ...(result?.pass_id
+          ? [{ type: "Events" as const, id: `PASS_${result.pass_id}` }]
+          : []),
+      ],
     }),
     getEventPass: builder.query<EventPassDetail, string>({
       query: (passId) => ({ url: `/events/passes/${passId}`, method: "GET" }),

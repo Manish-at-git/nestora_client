@@ -25,6 +25,7 @@ import {
   QuickPostPublisher,
 } from "./components";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import { ROLE_CODE } from "@/constants/roleCodes";
 
 export interface TimelineItem {
   id: string | number;
@@ -98,14 +99,45 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   isTenant = false,
   onNavigateTab,
 }) => {
+  const { profile, account } = useAuth();
+  const roleCode = account?.role_code?.toLowerCase();
+
+  const dashboardHeader = (() => {
+    switch (roleCode) {
+      case ROLE_CODE.BOARD_MEMBER:
+        return {
+          title: "Board Member Dashboard",
+          description: "Access your community features and manage board responsibilities.",
+        };
+      case ROLE_CODE.COMMITTEE_MEMBER:
+        return {
+          title: "Committee Member Dashboard",
+          description: "Access your community features and manage committee responsibilities.",
+        };
+      case ROLE_CODE.TENANT:
+        return {
+          title: "Tenant Portal",
+          description: "Access your rental unit amenities, maintenance, and announcements.",
+        };
+      case ROLE_CODE.CSR:
+        return {
+          title: "Member Dashboard",
+          description: "Access community information and member services.",
+        };
+      case ROLE_CODE.HOMEOWNER:
+      default:
+        return {
+          title: "Homeowner Dashboard",
+          description: "Access your community features and manage your unit.",
+        };
+    }
+  })();
+
   usePageHeader({
-    title: isTenant ? "Tenant Portal" : "Homeowner Dashboard",
-    description: isTenant
-      ? "Access your rental unit amenities, maintenance, and announcements."
-      : "Access your community features and manage your unit.",
+    title: dashboardHeader.title,
+    description: dashboardHeader.description,
   });
 
-  const { profile, account } = useAuth();
   const [postText, setPostText] = useState("");
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,9 +167,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const limit = 10;
   const displayName = profile?.name || account?.name || account?.email?.split("@")[0] || "User";
   const isBoardMember =
-    account?.role === "Board member" ||
-    account?.role === "Admin" ||
-    account?.role === "Super admin";
+    roleCode === ROLE_CODE.BOARD_MEMBER ||
+    roleCode === ROLE_CODE.ADMIN ||
+    roleCode === ROLE_CODE.SUPER_ADMIN;
 
   const currencySymbol = getCurrencySymbol(account?.association_country || profile?.country);
 
@@ -456,7 +488,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* Greeting Header */}
       <DashboardHeader displayName={displayName} />
 
@@ -511,9 +543,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       {!isBoardMember ? !isTenant && <PendingVisitorApprovals /> : <></>}
 
       {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column (Timeline Feed) */}
-        <div className="lg:col-span-2">
+        <div className="min-w-0 lg:col-span-2">
           {/* Quick Publish Box for Board Members / Admins */}
           {isBoardMember ? (
             <QuickPostPublisher
@@ -551,7 +583,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         {/* Right Column (Widgets) */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Dues Widget Card */}
           <DuesWidgetCard
             account={account}

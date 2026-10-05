@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import EmojiPicker from "emoji-picker-react";
 import {
   FileText,
   Image as ImageIcon,
@@ -6,11 +7,13 @@ import {
   MessageSquare,
   Paperclip,
   Send,
+  Smile,
   Users,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { resolveMediaUrl, uploadDocumentAsset, uploadMediaAsset } from "@/lib/cloudUploader";
 import { useGetChatPoolMessagesQuery, useSendChatPoolMessageMutation } from "../api/chatPoolApi";
@@ -38,8 +41,10 @@ export const ChatPoolWorkspace: React.FC<ChatPoolWorkspaceProps> = ({ pool }) =>
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const queryArgs = {
     poolType: pool.pool_type,
     poolId: pool.pool_id,
@@ -62,6 +67,22 @@ export const ChatPoolWorkspace: React.FC<ChatPoolWorkspaceProps> = ({ pool }) =>
   const clearAttachment = () => {
     setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const input = messageInputRef.current;
+    const cursorStart = input?.selectionStart ?? message.length;
+    const cursorEnd = input?.selectionEnd ?? message.length;
+    const nextMessage = `${message.slice(0, cursorStart)}${emoji}${message.slice(cursorEnd)}`;
+
+    setMessage(nextMessage);
+    setIsEmojiPickerOpen(false);
+
+    requestAnimationFrame(() => {
+      input?.focus();
+      const nextCursorPosition = cursorStart + emoji.length;
+      input?.setSelectionRange(nextCursorPosition, nextCursorPosition);
+    });
   };
 
   const handleSend = async (event: React.FormEvent) => {
@@ -192,7 +213,24 @@ export const ChatPoolWorkspace: React.FC<ChatPoolWorkspaceProps> = ({ pool }) =>
           <Button type="button" variant="outline" size="icon" className="shrink-0 rounded-xl" onClick={() => fileInputRef.current?.click()} aria-label="Attach a file">
             <Paperclip size={17} />
           </Button>
+          <Popover open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="outline" size="icon" className="shrink-0 rounded-xl" aria-label="Add emoji">
+                <Smile size={17} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" side="top" className="w-auto border-0 p-0 shadow-xl">
+              <EmojiPicker
+                onEmojiClick={(emojiData) => insertEmoji(emojiData.emoji)}
+                emojiStyle="native"
+                width={352}
+                height={420}
+                previewConfig={{ showPreview: false }}
+              />
+            </PopoverContent>
+          </Popover>
           <textarea
+            ref={messageInputRef}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             placeholder="Write a message…"

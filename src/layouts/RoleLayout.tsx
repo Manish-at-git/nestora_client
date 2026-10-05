@@ -14,15 +14,15 @@ import { Sidebar } from "@/components/sidebar";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { setActiveAssociationId, openMobileSidebar } from "@/app/uiSlice";
 import { useGetAdminAssociationsQuery } from "@/services/api/associationsApi";
-import { ASSOCIATION_DIRECTORY_ROLE_CODES, ROLE_CODE } from "@/constants/roleCodes";
+import {
+  ASSOCIATION_DIRECTORY_ROLE_CODES,
+  isResidentVisitorRole,
+  ROLE_CODE,
+} from "@/constants/roleCodes";
 import { FEATURES } from "@/constants/featureCodes";
 import { usePermission } from "@/hooks/usePermission";
 import {
   cn,
-  isHomeowner,
-  isTenant,
-  isCommitteeMember,
-  isBoardMember,
 } from "@/lib/utils";
 
 export interface RoleLayoutProps {
@@ -68,39 +68,44 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
 
   const pageHeader = useAppSelector((state) => state.ui.pageHeader);
 
-  const getRoleHeaderInfo = (role?: string) => {
-    switch (role?.toLowerCase()) {
-      case "homeowner":
+  const getRoleHeaderInfo = (roleCode?: string) => {
+    switch (roleCode?.toLowerCase()) {
+      case ROLE_CODE.HOMEOWNER:
         return {
           title: "Homeowner Dashboard",
           description: "Access your community features and manage your unit.",
         };
-      case "tenant":
+      case ROLE_CODE.BOARD_MEMBER:
+        return {
+          title: "Board Member Dashboard",
+          description: "Access your community features and manage your unit.",
+        };
+      case ROLE_CODE.COMMITTEE_MEMBER:
+        return {
+          title: "Committee Member Dashboard",
+          description: "Access your community features and manage your unit.",
+        };
+      case ROLE_CODE.TENANT:
         return {
           title: "Tenant Portal",
           description: "Access your rental unit amenities, maintenance, and announcements.",
         };
-      case "board member":
-        return {
-          title: "Board Member Portal",
-          description: "Manage association governance, members, and approvals.",
-        };
-      case "security":
+      case ROLE_CODE.SECURITY:
         return {
           title: "Security Gatehouse",
           description: "Visitor approvals, entry logs, and patrol monitoring.",
         };
-      case "accountant":
+      case ROLE_CODE.ACCOUNTANT:
         return {
           title: "Financial Center",
           description: "Manage ledger, payments, invoices, and accounting.",
         };
-      case "admin":
+      case ROLE_CODE.ADMIN:
         return {
           title: "Admin Dashboard",
           description: "Manage your assigned associations and oversee operations.",
         };
-      case "super admin":
+      case ROLE_CODE.SUPER_ADMIN:
         return {
           title: "Superadmin Dashboard",
           description: "Configure roles, features, and permissions.",
@@ -128,9 +133,9 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
     }
 
     const path = location.pathname;
-    const roleLower = account?.role?.toLowerCase();
+    const roleCode = account?.role_code?.toLowerCase();
 
-    if (path === "/super-admin" || (path === "/overview" && roleLower === "super admin")) {
+    if (path === "/super-admin" || (path === "/overview" && roleCode === ROLE_CODE.SUPER_ADMIN)) {
       return {
         title:  "Superadmin Dashboard",
         description: "Configure roles, features, and permissions.",
@@ -215,7 +220,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
       };
     }
 
-    return getRoleHeaderInfo(account?.role);
+    return getRoleHeaderInfo(account?.role_code);
   };
 
   const headerInfo = getHeaderInfo();
@@ -227,11 +232,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   const { canView: canViewChatPool } = usePermission(FEATURES.CHAT_POOL.FEATURE_CODE);
   const { canView: canViewNotifications } = usePermission("notifications");
   const { canView: canViewNotification } = usePermission("notification");
-  const isResidentOrMember =
-    isHomeowner(account?.role) ||
-    isTenant(account?.role) ||
-    isCommitteeMember(account?.role) ||
-    isBoardMember(account?.role);
+  const isResidentOrMember = isResidentVisitorRole(account?.role_code);
 
   const showNavbarWallet = isResidentOrMember && canViewWallet;
   const showNotificationDropdown = canViewNotifications || canViewNotification;
@@ -291,7 +292,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
               </button>
 
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-serif text-slate-800 tracking-tight truncate">
+                <h1 className="text-xl sm:text-3xl font-serif text-slate-800 tracking-tight truncate">
                   {displayTitle}
                 </h1>
                 {displayDescription && (
@@ -308,7 +309,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
                 <button
                   type="button"
                   onClick={() => navigate(FEATURES.NEARBY_PLACES.FEATURE_PATH)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
+                  className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
                   title="Nearby Places"
                 >
                   <MapPin size={15} />
@@ -319,7 +320,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
                 <button
                   type="button"
                   onClick={() => navigate(FEATURES.CHAT_POOL.FEATURE_PATH)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
+                  className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full items-center justify-center transition-all duration-150 cursor-pointer select-none text-slate-600 hover:text-slate-900 hover:bg-white bg-white/70 border border-slate-200/60 shadow-2xs"
                   title="Chat Pool"
                   aria-label="Open Chat Pool"
                 >

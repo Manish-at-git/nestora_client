@@ -34,15 +34,15 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   return (
     <div
       key={`a-${item.id}`}
-      className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6"
+      className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm mb-6"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold tracking-wider text-slate-500 uppercase">
           <span className="flex items-center gap-1.5">
             <Megaphone size={14} className="text-blue-500" /> Announcement
           </span>
           {item.audience && (
-            <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+          <span className="max-w-full break-words bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
               {item.audience}
             </span>
           )}
@@ -72,7 +72,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-slate-100">
         <div className="flex gap-4">
           <button
             onClick={() => onToggleLike(item.id, item.user_has_liked)}
@@ -95,7 +95,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
             <MessageCircle size={18} /> {item.comment_count || 0}
           </button>
         </div>
-        <div className="text-xs text-slate-400 font-mono">
+        <div className="break-words text-xs leading-relaxed text-slate-400 font-mono sm:text-right">
           <span>
             {formatDate(item.created_at)} - by {item.author_name || "Admin"}
           </span>
@@ -106,4 +106,3 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
 };
 
 export default AnnouncementCard;
-

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import { Car } from "lucide-react";
 import { toast } from "sonner";
 import { FormModal } from "@/components/common/FormModal";
@@ -7,6 +7,7 @@ import { FormField } from "@/components/common/FormField";
 import { FileUploadZone } from "@/components/common/FileUploadZone";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useAppForm } from "@/hooks/useAppForm";
 import { useAddVehicleMutation, useUpdateVehicleMutation } from "../api/profileApi";
 import { VehicleFormData } from "../types";
@@ -35,6 +36,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useAppForm<VehicleFormValues>({
     schema: vehicleSchema,
@@ -43,6 +45,8 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       registration_number: "",
       insurance_url: "",
       puc_url: "",
+      insurance_reminder_date: "",
+      puc_reminder_date: "",
     },
   });
 
@@ -55,6 +59,8 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
           registration_number: initialData.registration_number || "",
           insurance_url: initialData.insurance_url || "",
           puc_url: initialData.puc_url || "",
+          insurance_reminder_date: initialData.insurance_reminder_date || "",
+          puc_reminder_date: initialData.puc_reminder_date || "",
         });
       } else {
         reset({
@@ -62,10 +68,27 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
           registration_number: "",
           insurance_url: "",
           puc_url: "",
+          insurance_reminder_date: "",
+          puc_reminder_date: "",
         });
       }
     }
   }, [initialData, isOpen, reset]);
+
+  const insuranceDocument = useWatch({ control, name: "insurance_url" });
+  const pucDocument = useWatch({ control, name: "puc_url" });
+
+  useEffect(() => {
+    if (!insuranceDocument) {
+      setValue("insurance_reminder_date", "");
+    }
+  }, [insuranceDocument, setValue]);
+
+  useEffect(() => {
+    if (!pucDocument) {
+      setValue("puc_reminder_date", "");
+    }
+  }, [pucDocument, setValue]);
 
   const onSubmit = async (values: VehicleFormValues) => {
     const payload: VehicleFormData = {
@@ -73,6 +96,8 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       registration_number: values.registration_number?.trim().toUpperCase() || "",
       insurance_url: values.insurance_url || null,
       puc_url: values.puc_url || null,
+      insurance_reminder_date: values.insurance_url ? values.insurance_reminder_date || null : null,
+      puc_reminder_date: values.puc_url ? values.puc_reminder_date || null : null,
     };
 
     try {
@@ -96,7 +121,7 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
       onClose={onClose}
       title={isEditMode ? "Edit Vehicle" : "Add New Vehicle"}
       icon={<Car className="w-5 h-5 text-[#232C3E]" />}
-      size="lg"
+      size="2xl"
       onSubmit={handleSubmit(onSubmit)}
       isSubmitting={isSaving}
       submitText={isEditMode ? "Save Changes" : "Add Vehicle"}
@@ -135,48 +160,98 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
           />
         </FormField>
 
-        {/* Documents */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <Controller
-            name="insurance_url"
-            control={control}
-            render={({ field }) => (
-              <FormField
-                label="Insurance Policy Document"
-                error={errors.insurance_url?.message}
-              >
-                <FileUploadZone
-                  value={field.value || ""}
-                  onChange={field.onChange}
-                  label="Upload Insurance Document"
-                  helperText="Upload PDF or document image (max 10MB)"
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  maxSizeMB={10}
-                />
-              </FormField>
-            )}
-          />
+        <section className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-900">Vehicle documents</h4>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Upload a document to set its renewal reminder date.
+            </p>
+          </div>
 
-          <Controller
-            name="puc_url"
-            control={control}
-            render={({ field }) => (
-              <FormField
-                label="PUC Certificate"
-                error={errors.puc_url?.message}
-              >
-                <FileUploadZone
-                  value={field.value || ""}
-                  onChange={field.onChange}
-                  label="Upload PUC Document"
-                  helperText="Upload PDF or certificate image (max 10MB)"
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  maxSizeMB={10}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <Controller
+                name="insurance_url"
+                control={control}
+                render={({ field }) => (
+                  <FormField label="Insurance Policy" error={errors.insurance_url?.message}>
+                    <FileUploadZone
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      label="Upload insurance policy"
+                      helperText="PDF or image, up to 10MB"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      maxSizeMB={10}
+                    />
+                  </FormField>
+                )}
+              />
+
+              {insuranceDocument && (
+                <Controller
+                  name="insurance_reminder_date"
+                  control={control}
+                  render={({ field }) => (
+                    <FormField
+                      label="Insurance renewal reminder"
+                      error={errors.insurance_reminder_date?.message}
+                      helperText="Choose when you want to be reminded to renew."
+                    >
+                      <DatePicker
+                        value={field.value || ""}
+                        onChange={(date) => field.onChange(date || "")}
+                        placeholder="Select reminder date"
+                        minDate={new Date()}
+                        isClearable
+                      />
+                    </FormField>
+                  )}
                 />
-              </FormField>
-            )}
-          />
-        </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Controller
+                name="puc_url"
+                control={control}
+                render={({ field }) => (
+                  <FormField label="PUC Certificate" error={errors.puc_url?.message}>
+                    <FileUploadZone
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      label="Upload PUC certificate"
+                      helperText="PDF or image, up to 10MB"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      maxSizeMB={10}
+                    />
+                  </FormField>
+                )}
+              />
+
+              {pucDocument && (
+                <Controller
+                  name="puc_reminder_date"
+                  control={control}
+                  render={({ field }) => (
+                    <FormField
+                      label="PUC renewal reminder"
+                      error={errors.puc_reminder_date?.message}
+                      helperText="Choose when you want to be reminded to renew."
+                    >
+                      <DatePicker
+                        value={field.value || ""}
+                        onChange={(date) => field.onChange(date || "")}
+                        placeholder="Select reminder date"
+                        minDate={new Date()}
+                        isClearable
+                      />
+                    </FormField>
+                  )}
+                />
+              )}
+            </div>
+          </div>
+        </section>
       </div>
     </FormModal>
   );

@@ -25,7 +25,7 @@ export function EventPassContent({
   const { pass, event, association, transfers, is_owner: isOwner } = data;
   const [lastLink, setLastLink] = useState("");
   const [lastRecipientMobile, setLastRecipientMobile] = useState("");
-  const [showShareForm, setShowShareForm] = useState(true);
+  const [showShareForm, setShowShareForm] = useState(false);
   const [share, { isLoading }] = useShareEventPassMutation();
   const {
     register,

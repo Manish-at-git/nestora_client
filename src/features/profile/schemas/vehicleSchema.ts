@@ -12,7 +12,8 @@ export const vehicleSchema = z.object({
     .transform((val) => val.trim().toUpperCase()),
   insurance_url: z.string().optional().nullable().default(""),
   puc_url: z.string().optional().nullable().default(""),
+  insurance_reminder_date: z.string().optional().nullable().default(""),
+  puc_reminder_date: z.string().optional().nullable().default(""),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleSchema>;
-

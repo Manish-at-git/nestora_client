@@ -21,6 +21,8 @@ import {
 export const RoleDashboardRouter: React.FC = () => {
   const { account } = useAuth();
 
+  console.log("account?.role_code", account);
+
   switch (account?.role_code?.toLowerCase()) {
     case ROLE_CODE.SUPER_ADMIN:
       return <SuperAdminOverview />;

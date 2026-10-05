@@ -46,6 +46,8 @@ export interface Vehicle {
   registration_number: string;
   insurance_url?: string | null;
   puc_url?: string | null;
+  insurance_reminder_date?: string | null;
+  puc_reminder_date?: string | null;
   created_at?: string;
 }
 
@@ -55,6 +57,8 @@ export interface VehicleFormData {
   registration_number: string;
   insurance_url?: string | null;
   puc_url?: string | null;
+  insurance_reminder_date?: string | null;
+  puc_reminder_date?: string | null;
 }
 
 export interface Pet {
