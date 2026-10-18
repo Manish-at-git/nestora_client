@@ -58,6 +58,8 @@ export const baseApi = createApi({
     "Documents",
     "UnitDocuments",
     "Financials",
+    "BalanceSheets",
+    "IncomeStatements",
     "Amenities",
     "Marketplace",
     "Incidents",

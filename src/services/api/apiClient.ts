@@ -109,6 +109,13 @@ apiClient.interceptors.request.use(
       error.code = "AUTH_REQUIRED";
       return Promise.reject(error);
     }
+
+    // Let the browser generate the multipart boundary for file uploads.
+    // The API client's JSON default would otherwise make FastAPI miss file fields.
+    if (config.data instanceof FormData) {
+      config.headers.delete("Content-Type");
+    }
+
     const method = config.method?.toLowerCase();
     const csrfToken = getCookieValue(CSRF_COOKIE_NAME);
     if (method && UNSAFE_METHODS.has(method) && csrfToken && config.headers) {

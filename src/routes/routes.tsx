@@ -37,6 +37,8 @@ import { EmailTemplatesPage } from "@/features/email-templates";
 import { NearbyPlacesPage } from "@/features/nearby-places";
 import { ChatPoolPage } from "@/features/chat-pool";
 import { FinancialsPage } from "@/features/financials";
+import { BalanceSheetPage } from "@/features/balance-sheet";
+import { IncomeStatementPage } from "@/features/income-statement";
 import { ChartOfAccountsPage } from "@/features/chart-of-accounts";
 import DesignSystemPage from "@/features/design-system/DesignSystemPage";
 import { ModulePlaceholder } from "@/components/common/ModulePlaceholder";
@@ -222,6 +224,14 @@ export const protectedAppRoutes: AppRoute[] = [
   {
     path: FEATURES.FINANCIALS.FEATURE_PATH,
     element: <FinancialsPage />,
+  },
+  {
+    path: FEATURES.BALANCE_SHEET.FEATURE_PATH,
+    element: <BalanceSheetPage />,
+  },
+  {
+    path: FEATURES.INCOME_STATEMENT.FEATURE_PATH,
+    element: <IncomeStatementPage />,
   },
   {
     path: FEATURES.INSPECTION.FEATURE_PATH,

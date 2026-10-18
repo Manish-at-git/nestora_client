@@ -15,7 +15,6 @@ import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { setActiveAssociationId, openMobileSidebar } from "@/app/uiSlice";
 import { useGetAdminAssociationsQuery } from "@/services/api/associationsApi";
 import {
-  ASSOCIATION_DIRECTORY_ROLE_CODES,
   isResidentVisitorRole,
   ROLE_CODE,
 } from "@/constants/roleCodes";
@@ -24,6 +23,12 @@ import { usePermission } from "@/hooks/usePermission";
 import {
   cn,
 } from "@/lib/utils";
+
+const ASSOCIATION_SELECTOR_ROLE_CODES = [
+  ROLE_CODE.SUPER_ADMIN,
+  ROLE_CODE.ADMIN,
+  ROLE_CODE.ACCOUNTANT,
+] as const;
 
 export interface RoleLayoutProps {
   title?: string;
@@ -57,13 +62,16 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   const [upgradeModalFeature, setUpgradeModalFeature] = useState<string | null>(null);
 
   const isAdmin = account?.role_code === ROLE_CODE.ADMIN;
-  const canLoadAdminAssociations = ASSOCIATION_DIRECTORY_ROLE_CODES.includes(
-    account?.role_code as (typeof ASSOCIATION_DIRECTORY_ROLE_CODES)[number],
+  const canSelectAssociation = ASSOCIATION_SELECTOR_ROLE_CODES.includes(
+    account?.role_code as (typeof ASSOCIATION_SELECTOR_ROLE_CODES)[number],
   );
+  const isFinancialMenu =
+    location.pathname === FEATURES.FINANCIALS.FEATURE_PATH ||
+    location.pathname.startsWith(`${FEATURES.FINANCIALS.FEATURE_PATH}/`);
 
-  // Fetch admin associations if Admin
+  // The active association is shared by Super Admin, Admin, and Accountant workflows.
   const { data: adminAssociations = [] } = useGetAdminAssociationsQuery(undefined, {
-    skip: !canLoadAdminAssociations,
+    skip: !canSelectAssociation,
   });
 
   const pageHeader = useAppSelector((state) => state.ui.pageHeader);
@@ -303,8 +311,23 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
               </div>
             </div>
 
-            {/* Top Row Right Actions: Notifications, Wallet, Profile */}
+            {/* Top Row Right Actions: Association, Notifications, Wallet, Profile */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {canSelectAssociation && (
+                <div className="hidden md:block w-48 xl:w-56">
+                  <Select
+                    placeholder="Select Association"
+                    icon={<Building size={15} />}
+                    options={adminAssociations}
+                    value={activeAssociationId || "ALL"}
+                    onChange={(e) => dispatch(setActiveAssociationId(e.target.value))}
+                    showAllOption={!isFinancialMenu}
+                    allOptionLabel="All Associations"
+                    size="sm"
+                  />
+                </div>
+              )}
+
               {canViewNearbyPlaces && (
                 <button
                   type="button"
@@ -352,45 +375,33 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
             </div>
           </div>
 
-          {/* Secondary Row: Admin Association Selector, Search & Custom Header Controls */}
+          {/* Secondary Row: Admin Search & Custom Header Controls */}
           {(isAdmin || headerControls) && (
             <div className="flex items-center gap-2.5 flex-wrap w-full pt-1 sm:pt-0">
               {isAdmin && (
-                <>
-                  <div className="flex-1 sm:flex-initial min-w-[180px] max-w-full">
-                    <AdminHomeownerSearch />
-                  </div>
+                <div className="flex-1 sm:flex-initial min-w-[180px] max-w-full">
+                  <AdminHomeownerSearch />
+                </div>
+              )}
 
-                  <div className="w-full sm:w-56">
-                    <Select
-                      icon={<Building size={15} />}
-                      options={adminAssociations}
-                      value={activeAssociationId || "ALL"}
-                      onChange={(e) => dispatch(setActiveAssociationId(e.target.value))}
-                      showAllOption
-                      allOptionLabel="All Associations"
-                      size="sm"
-                    />
-                  </div>
+              {isAdmin && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Approvals"
+                  >
+                    <CheckCircle size={18} />
+                  </button>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-                      title="Approvals"
-                    >
-                      <CheckCircle size={18} />
-                    </button>
-
-                    <button
-                      type="button"
-                      className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-                      title="Feedback"
-                    >
-                      <MessageSquare size={18} />
-                    </button>
-                  </div>
-                </>
+                  <button
+                    type="button"
+                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Feedback"
+                  >
+                    <MessageSquare size={18} />
+                  </button>
+                </div>
               )}
 
               {headerControls && (
