@@ -39,6 +39,10 @@ import { ChatPoolPage } from "@/features/chat-pool";
 import { FinancialsPage } from "@/features/financials";
 import { BalanceSheetPage } from "@/features/balance-sheet";
 import { IncomeStatementPage } from "@/features/income-statement";
+import { PrepaidReportPage } from "@/features/prepaid-report";
+import { DelinquencyReportPage } from "@/features/delinquency-report";
+import { VendorAgingReportPage } from "@/features/vendor-aging-report";
+import { InvoicesPage } from "@/features/invoices";
 import { ChartOfAccountsPage } from "@/features/chart-of-accounts";
 import DesignSystemPage from "@/features/design-system/DesignSystemPage";
 import { ModulePlaceholder } from "@/components/common/ModulePlaceholder";
@@ -232,6 +236,22 @@ export const protectedAppRoutes: AppRoute[] = [
   {
     path: FEATURES.INCOME_STATEMENT.FEATURE_PATH,
     element: <IncomeStatementPage />,
+  },
+  {
+    path: FEATURES.PREPAID_REPORT.FEATURE_PATH,
+    element: <PrepaidReportPage />,
+  },
+  {
+    path: FEATURES.DELINQUENCY_REPORT.FEATURE_PATH,
+    element: <DelinquencyReportPage />,
+  },
+  {
+    path: FEATURES.VENDOR_AGING_REPORT.FEATURE_PATH,
+    element: <VendorAgingReportPage />,
+  },
+  {
+    path: FEATURES.INVOICE.FEATURE_PATH,
+    element: <InvoicesPage />,
   },
   {
     path: FEATURES.INSPECTION.FEATURE_PATH,

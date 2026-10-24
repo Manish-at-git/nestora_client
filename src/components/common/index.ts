@@ -4,6 +4,7 @@ export * from "./DeleteModal";
 export * from "./DataTable";
 export * from "./EmptyState";
 export * from "./FeatureHeaderBanner";
+export * from "./FinancialReportImportModal";
 export * from "./FileActions";
 export * from "./FileUploadZone";
 export * from "./FormField";

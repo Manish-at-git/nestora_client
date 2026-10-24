@@ -18,6 +18,7 @@ export interface FileUploadZoneProps {
   onChange: (fileUrl: string) => void;
   onUpload?: (file: File) => Promise<string | void>;
   onFileRead?: (file: File) => Promise<void> | void;
+  onError?: (message: string) => void;
   localOnly?: boolean;
   onUploadingChange?: (uploading: boolean) => void;
   showSuccessToast?: boolean;
@@ -35,6 +36,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   onChange,
   onUpload,
   onFileRead,
+  onError,
   localOnly = false,
   onUploadingChange,
   showSuccessToast = false,
@@ -53,11 +55,14 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
 
   const processUpload = async (file: File) => {
     if (file.size > maxSizeMB * 1024 * 1024) {
-      toast.error(`File size exceeds the maximum limit of ${maxSizeMB}MB`);
+      const message = `File size exceeds the maximum limit of ${maxSizeMB} MB`;
+      onError?.(message);
+      toast.error(message);
       return;
     }
 
     try {
+      onError?.("");
       setUploading(true);
       onUploadingChange?.(true);
       setFileName(file.name);
@@ -86,7 +91,9 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
         setFileName("");
         onChange("");
       }
-      toast.error(err?.message || "Failed to upload file. Please try again.");
+      const message = err?.message || "Failed to read the selected file. Please try again.";
+      onError?.(message);
+      toast.error(message);
     } finally {
       setUploading(false);
       onUploadingChange?.(false);
