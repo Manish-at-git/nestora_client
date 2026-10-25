@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import { AccessRestricted } from "@/components/common";
@@ -12,6 +13,7 @@ import type { Association } from "../types";
 
 export const AssociationsPage: React.FC = () => {
   const { canView, isLoading: isPermLoading } = usePermission();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   usePageHeader({
     title: "Associations Directory",
@@ -30,6 +32,16 @@ export const AssociationsPage: React.FC = () => {
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   const [selectedAssociation, setSelectedAssociation] = useState<Association | null>(null);
 
+  const isCreateRouteOpen = searchParams.get("create") === "1" && canView;
+
+  const clearCreateParameter = () => {
+    if (searchParams.get("create") !== "1") return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("create");
+    setSearchParams(nextParams, { replace: true });
+  };
+
   const handleOpenOnboard = () => {
     setIsOnboardModalOpen(true);
   };
@@ -40,6 +52,7 @@ export const AssociationsPage: React.FC = () => {
 
   const handleCloseOnboard = () => {
     setIsOnboardModalOpen(false);
+    clearCreateParameter();
   };
 
   const handleCloseView = () => {
@@ -62,7 +75,7 @@ export const AssociationsPage: React.FC = () => {
 
       {/* Onboard Association Modal - Unconditionally mounted for smooth exit animation */}
       <OnboardAssociationModal
-        isOpen={isOnboardModalOpen}
+        isOpen={isOnboardModalOpen || isCreateRouteOpen}
         onClose={handleCloseOnboard}
         onSuccess={() => refetch()}
       />

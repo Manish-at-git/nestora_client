@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import { AccessRestricted } from "@/components/common";
@@ -8,6 +9,7 @@ import type { SystemUser } from "../types";
 
 export const UsersPage: React.FC = () => {
   const { canView, isLoading: isPermLoading } = usePermission();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   usePageHeader({
     title: "Users",
@@ -23,6 +25,16 @@ export const UsersPage: React.FC = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<SystemUser | null>(null);
   const [userToView, setUserToView] = useState<SystemUser | null>(null);
+
+  const isCreateRouteOpen = searchParams.get("create") === "1" && canView;
+
+  const clearCreateParameter = () => {
+    if (searchParams.get("create") !== "1") return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("create");
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const handleOpenCreate = () => {
     setUserToEdit(null);
@@ -40,6 +52,7 @@ export const UsersPage: React.FC = () => {
 
   const handleCloseFormModal = () => {
     setIsFormModalOpen(false);
+    clearCreateParameter();
   };
 
   const handleCloseViewModal = () => {
@@ -62,7 +75,7 @@ export const UsersPage: React.FC = () => {
 
       {/* Form Modal */}
       <UserFormModal
-        isOpen={isFormModalOpen}
+        isOpen={isFormModalOpen || isCreateRouteOpen}
         onClose={handleCloseFormModal}
         userToEdit={userToEdit}
         onSuccess={() => refetch()}

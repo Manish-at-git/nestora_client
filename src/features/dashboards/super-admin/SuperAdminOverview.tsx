@@ -560,28 +560,28 @@ export const SuperAdminOverview: React.FC = () => {
             <SectionCard title="Quick Actions">
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => navigate("/associations")}
+                  onClick={() => navigate("/associations?create=1")}
                   className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-all text-slate-600 cursor-pointer group"
                 >
                   <Plus className="group-hover:scale-110 transition-transform text-indigo-600" />
                   <span className="text-xs font-medium text-center">Add Association</span>
                 </button>
                 <button
-                  onClick={() => navigate("/announcements")}
+                  onClick={() => navigate("/announcements?create=1")}
                   className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-all text-slate-600 cursor-pointer group"
                 >
                   <Send className="group-hover:scale-110 transition-transform text-indigo-600" />
                   <span className="text-xs font-medium text-center">Broadcast Alert</span>
                 </button>
                 <button
-                  onClick={() => navigate("/financials")}
+                  onClick={() => navigate("/financials/invoices?create=1")}
                   className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-all text-slate-600 cursor-pointer group"
                 >
                   <FileText className="group-hover:scale-110 transition-transform text-indigo-600" />
                   <span className="text-xs font-medium text-center">Generate Invoice</span>
                 </button>
                 <button
-                  onClick={() => navigate("/users")}
+                  onClick={() => navigate("/users?create=1")}
                   className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-all text-slate-600 cursor-pointer group"
                 >
                   <UserCheck className="group-hover:scale-110 transition-transform text-indigo-600" />

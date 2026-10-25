@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { ROLES_STRING } from "@/lib/staticData";
+import { ROLE_CODE } from "@/constants/roleCodes";
 
 export interface PermissionResult {
   canCreate: boolean;
@@ -53,10 +53,25 @@ export const usePermission = (featureCodeOrName?: string): PermissionResult => {
       };
     }
 
-    const isSuperAdmin = account.role === ROLES_STRING.SUPER_ADMIN;
+    const isSuperAdmin = account.role_code === ROLE_CODE.SUPER_ADMIN;
 
     // Target identifier: either passed explicitly, or derived from current route location
     const target = featureCodeOrName || location.pathname;
+
+    // Super Admin access is role-code based and must not depend on a missing
+    // feature-permission row in a particular database environment.
+    if (isSuperAdmin) {
+      return {
+        canCreate: true,
+        canView: true,
+        canUpdate: true,
+        canEdit: true,
+        canDelete: true,
+        isSuperAdmin: true,
+        isLoading: false,
+        role: account.role,
+      };
+    }
 
     if (!target) {
       return {

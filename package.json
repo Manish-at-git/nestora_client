@@ -36,6 +36,7 @@
     "date-fns": "^4.1.0",
     "emoji-picker-react": "^4.22.3",
     "framer-motion": "^11.18.0",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.475.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",

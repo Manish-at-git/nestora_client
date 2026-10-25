@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Plus, Search, Megaphone } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
   selectedAssociationId,
   adminAssociations = [],
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   usePageHeader({
     title: "Announcements",
     description: "Official association notices, alerts, maintenance schedules, and governance updates.",
@@ -72,6 +74,22 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
   // Fallback to role if permissions not explicitly seeded
   const effectiveCanView = canView ?? true;
   const effectiveCanCreate = canCreatePerm ?? (userIsAdmin || userIsBoard);
+
+  const isCreateRouteOpen = searchParams.get("create") === "1" && effectiveCanCreate;
+
+  const clearCreateParameter = () => {
+    if (searchParams.get("create") !== "1") return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("create");
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const closeAnnouncementModal = () => {
+    setIsModalOpen(false);
+    setEditingAnnouncement(null);
+    clearCreateParameter();
+  };
 
   const {
     data: fetchedAdminAssociations = [],
@@ -317,11 +335,8 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
 
       {/* Publish / Edit Modal */}
       <AnnouncementFormModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingAnnouncement(null);
-        }}
+        isOpen={isModalOpen || isCreateRouteOpen}
+        onClose={closeAnnouncementModal}
         initialData={editingAnnouncement}
         adminAssociations={modalAssociations}
         selectedAssociationId={effectiveAssociationId}
