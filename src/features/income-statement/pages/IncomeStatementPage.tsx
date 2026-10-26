@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 
 import { useAppSelector } from "@/app/hooks";
+import { useAuth } from "@/context/AuthContext";
 import { AccessRestricted, EmptyState, LoadingSpinner } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -43,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select } from "@/components/ui/select";
 import { FEATURES } from "@/constants/featureCodes";
+import { isFinancialViewOnlyRole } from "@/constants/roleCodes";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import apiClient from "@/services/api/apiClient";
@@ -223,9 +225,14 @@ const InsightCard: React.FC<{ insight: IncomeStatementInsight }> = ({ insight })
 };
 
 export const IncomeStatementPage: React.FC = () => {
+  const { account } = useAuth();
+  const isFinancialViewOnly = isFinancialViewOnlyRole(account?.role_code);
   const associationId = useAppSelector((state) => state.ui.activeAssociationId);
-  const { canView, canCreate, canUpdate, isLoading: permissionLoading } =
+  const { canView, canCreate: canCreatePermission, canUpdate: canUpdatePermission, isLoading: permissionLoading } =
     usePermission(FEATURES.INCOME_STATEMENT.FEATURE_CODE);
+  const canCreate = canCreatePermission && !isFinancialViewOnly;
+  const canUpdate = canUpdatePermission && !isFinancialViewOnly;
+  const canExport = !isFinancialViewOnly;
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [customDate, setCustomDate] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
@@ -315,7 +322,7 @@ export const IncomeStatementPage: React.FC = () => {
           <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
             <Select icon={<BarChart3 size={15} />} options={periods.map((period) => ({ value: period, label: period }))} value={customDate ? "" : selectedPeriod} placeholder="Saved periods" onChange={(event) => { setCustomDate(""); setSelectedPeriod(event.target.value); }} size="sm" containerClassName="w-auto" className="min-w-44" />
             <DatePicker value={customDate} onChange={(value) => setCustomDate(value || "")} placeholder="Custom period date" displayFormat="MM/dd/yyyy" size="sm" containerClassName="w-auto" triggerClassName="h-8 min-w-36 text-xs" />
-            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="iconSm" aria-label="Income Statement actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={exportExcel}><FileSpreadsheet className="h-4 w-4" /> Export Excel</DropdownMenuItem>{canCreate && <DropdownMenuItem onSelect={openCreate}><Plus className="h-4 w-4" /> Create manually</DropdownMenuItem>}<DropdownMenuItem onSelect={() => setImportOpen(true)}><UploadCloud className="h-4 w-4" /> Import Excel</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+            {(canExport || canCreate) && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="iconSm" aria-label="Income Statement actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{canExport && <DropdownMenuItem onSelect={exportExcel}><FileSpreadsheet className="h-4 w-4" /> Export Excel</DropdownMenuItem>}{canCreate && <DropdownMenuItem onSelect={openCreate}><Plus className="h-4 w-4" /> Create manually</DropdownMenuItem>}{canCreate && <DropdownMenuItem onSelect={() => setImportOpen(true)}><UploadCloud className="h-4 w-4" /> Import Excel</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}
             {statement && canUpdate ? <Button onClick={openUpdate}><Pencil className="h-4 w-4" /> Update Income Statement</Button> : canCreate ? <Button onClick={openCreate}><Plus className="h-4 w-4" /> Create manually</Button> : null}
           </div>
         </div>

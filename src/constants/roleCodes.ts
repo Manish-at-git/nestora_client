@@ -26,6 +26,16 @@ export const RESIDENT_VISITOR_ROLE_CODES = [
   ROLE_CODE.COMMITTEE_MEMBER,
 ] as const;
 
+/** Residents and association members may review Financials, but never manage them. */
+export const FINANCIAL_VIEW_ONLY_ROLE_CODES = [
+  ROLE_CODE.HOMEOWNER,
+  ROLE_CODE.BOARD_MEMBER,
+  ROLE_CODE.COMMITTEE_MEMBER,
+] as const;
+
+export const isFinancialViewOnlyRole = (roleCode?: string): boolean =>
+  FINANCIAL_VIEW_ONLY_ROLE_CODES.some((code) => code === roleCode);
+
 export const SECURITY_VISITOR_ROLE_CODES = [ROLE_CODE.SECURITY] as const;
 
 export const isResidentVisitorRole = (roleCode?: string): boolean =>

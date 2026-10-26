@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 
 import { useAppSelector } from "@/app/hooks";
+import { useAuth } from "@/context/AuthContext";
 import { AccessRestricted, EmptyState, LoadingSpinner } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { FEATURES } from "@/constants/featureCodes";
+import { isFinancialViewOnlyRole } from "@/constants/roleCodes";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import apiClient, { formatApiErrorDetail } from "@/services/api/apiClient";
@@ -82,9 +84,14 @@ const MetricCard: React.FC<{
 );
 
 export const DelinquencyReportPage: React.FC = () => {
+  const { account } = useAuth();
+  const isFinancialViewOnly = isFinancialViewOnlyRole(account?.role_code);
   const associationId = useAppSelector((state) => state.ui.activeAssociationId);
-  const { canView, canCreate, canUpdate, isLoading: permissionLoading } =
+  const { canView, canCreate: canCreatePermission, canUpdate: canUpdatePermission, isLoading: permissionLoading } =
     usePermission(FEATURES.DELINQUENCY_REPORT.FEATURE_CODE);
+  const canCreate = canCreatePermission && !isFinancialViewOnly;
+  const canUpdate = canUpdatePermission && !isFinancialViewOnly;
+  const canExport = !isFinancialViewOnly;
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("");
   const [search, setSearch] = useState("");
@@ -293,7 +300,7 @@ export const DelinquencyReportPage: React.FC = () => {
             isClearable
             containerClassName="w-56"
           />
-          {(report || canCreate) && (
+          {((report && canExport) || canCreate) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -305,7 +312,7 @@ export const DelinquencyReportPage: React.FC = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {report && (
+                {report && canExport && (
                   <>
                     <DropdownMenuItem onSelect={exportExcel}>
                       <FileSpreadsheet className="h-4 w-4" /> Export Excel

@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FEATURES } from "@/constants/featureCodes";
 import { useAuth } from "@/context/AuthContext";
+import { isFinancialViewOnlyRole } from "@/constants/roleCodes";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import apiClient from "@/services/api/apiClient";
@@ -91,11 +92,15 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ label, value, tone }) => {
 
 export const BalanceSheetPage: React.FC = () => {
   const { account } = useAuth();
+  const isFinancialViewOnly = isFinancialViewOnlyRole(account?.role_code);
   const activeAssociationId = useAppSelector(
     (state) => state.ui.activeAssociationId,
   );
-  const { canView, canCreate, canUpdate, isLoading: permissionLoading } =
+  const { canView, canCreate: canCreatePermission, canUpdate: canUpdatePermission, isLoading: permissionLoading } =
     usePermission(FEATURES.BALANCE_SHEET.FEATURE_CODE);
+  const canCreate = canCreatePermission && !isFinancialViewOnly;
+  const canUpdate = canUpdatePermission && !isFinancialViewOnly;
+  const canExport = !isFinancialViewOnly;
   const [selectedDate, setSelectedDate] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorBalanceSheet, setEditorBalanceSheet] = useState<BalanceSheet | null>(null);
@@ -237,7 +242,7 @@ export const BalanceSheetPage: React.FC = () => {
             triggerClassName="h-8 min-w-32 rounded-lg px-2 text-xs font-medium"
           />
           {isFetching && !isLoading ? <span className="text-xs text-slate-400">Refreshing...</span> : null}
-          {balanceSheet || canCreate ? (
+          {(balanceSheet && canExport) || canCreate ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="iconSm" aria-label="More actions">
@@ -245,7 +250,7 @@ export const BalanceSheetPage: React.FC = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {balanceSheet ? (
+                {balanceSheet && canExport ? (
                   <>
                     <DropdownMenuItem onSelect={exportStatement}>
                       <FileSpreadsheet className="h-4 w-4" />

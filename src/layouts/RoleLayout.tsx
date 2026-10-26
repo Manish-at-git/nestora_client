@@ -16,6 +16,7 @@ import { setActiveAssociationId, openMobileSidebar } from "@/app/uiSlice";
 import { useGetAdminAssociationsQuery } from "@/services/api/associationsApi";
 import {
   isResidentVisitorRole,
+  isFinancialViewOnlyRole,
   ROLE_CODE,
 } from "@/constants/roleCodes";
 import { FEATURES } from "@/constants/featureCodes";
@@ -68,6 +69,9 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   const isFinancialMenu =
     location.pathname === FEATURES.FINANCIALS.FEATURE_PATH ||
     location.pathname.startsWith(`${FEATURES.FINANCIALS.FEATURE_PATH}/`);
+  const hasLockedFinancialAssociation = isFinancialViewOnlyRole(account?.role_code);
+  const showLockedFinancialAssociation =
+    isFinancialMenu && hasLockedFinancialAssociation && Boolean(account?.association_id);
 
   // The active association is shared by Super Admin, Admin, and Accountant workflows.
   const { data: adminAssociations = [] } = useGetAdminAssociationsQuery(undefined, {
@@ -253,6 +257,20 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
     }
   }, [account, navigate]);
 
+  useEffect(() => {
+    if (
+      showLockedFinancialAssociation &&
+      activeAssociationId !== account?.association_id
+    ) {
+      dispatch(setActiveAssociationId(account.association_id));
+    }
+  }, [
+    account?.association_id,
+    activeAssociationId,
+    dispatch,
+    showLockedFinancialAssociation,
+  ]);
+
   const displayName = profile?.name || account?.name || account?.email?.split("@")[0] || "User";
 
   const authorizedNavItems = getNavItemsForAccount(
@@ -313,15 +331,27 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
 
             {/* Top Row Right Actions: Association, Notifications, Wallet, Profile */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {canSelectAssociation && (
+              {(canSelectAssociation || showLockedFinancialAssociation) && (
                 <div className="hidden md:block w-48 xl:w-56">
                   <Select
-                    placeholder="Select Association"
+                    placeholder="Association"
                     icon={<Building size={15} />}
-                    options={adminAssociations}
-                    value={activeAssociationId || "ALL"}
+                    options={
+                      showLockedFinancialAssociation
+                        ? [{
+                            id: account?.association_id || "",
+                            name: account?.association_name || "Your association",
+                          }]
+                        : adminAssociations
+                    }
+                    value={
+                      showLockedFinancialAssociation
+                        ? account?.association_id || ""
+                        : activeAssociationId || "ALL"
+                    }
                     onChange={(e) => dispatch(setActiveAssociationId(e.target.value))}
-                    showAllOption={!isFinancialMenu}
+                    disabled={showLockedFinancialAssociation}
+                    showAllOption={canSelectAssociation && !isFinancialMenu}
                     allOptionLabel="All Associations"
                     size="sm"
                   />

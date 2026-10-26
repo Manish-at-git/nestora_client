@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 
 import { useAppSelector } from "@/app/hooks";
+import { useAuth } from "@/context/AuthContext";
 import { AccessRestricted, EmptyState, LoadingSpinner } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select } from "@/components/ui/select";
 import { FEATURES } from "@/constants/featureCodes";
+import { isFinancialViewOnlyRole } from "@/constants/roleCodes";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import apiClient, { formatApiErrorDetail } from "@/services/api/apiClient";
@@ -79,9 +81,14 @@ const MetricCard: React.FC<{
 );
 
 export const VendorAgingReportPage: React.FC = () => {
+  const { account } = useAuth();
+  const isFinancialViewOnly = isFinancialViewOnlyRole(account?.role_code);
   const associationId = useAppSelector((state) => state.ui.activeAssociationId);
-  const { canView, canCreate, canUpdate, isLoading: permissionLoading } =
+  const { canView, canCreate: canCreatePermission, canUpdate: canUpdatePermission, isLoading: permissionLoading } =
     usePermission(FEATURES.VENDOR_AGING_REPORT.FEATURE_CODE);
+  const canCreate = canCreatePermission && !isFinancialViewOnly;
+  const canUpdate = canUpdatePermission && !isFinancialViewOnly;
+  const canExport = !isFinancialViewOnly;
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
@@ -291,7 +298,7 @@ export const VendorAgingReportPage: React.FC = () => {
               className="h-8 w-52 rounded-lg border border-slate-200 pl-8 pr-3 text-xs outline-none focus:border-blue-400"
             />
           </label>
-          {(report || canCreate) && (
+          {((report && canExport) || canCreate) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -303,7 +310,7 @@ export const VendorAgingReportPage: React.FC = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {report && (
+                {report && canExport && (
                   <>
                     <DropdownMenuItem onSelect={exportExcel}>
                       <FileSpreadsheet className="h-4 w-4" /> Export Excel

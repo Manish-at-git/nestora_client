@@ -26,6 +26,7 @@ interface SessionAccount {
   role: Account["role"];
   role_code: string;
   association_id?: string | null;
+  association_name?: string | null;
   role_permissions: RolePermission[];
 }
 
@@ -54,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role: account.role,
     role_code: account.role_code,
     association_id: account.association_id || undefined,
+    association_name: account.association_name || undefined,
     role_permissions: account.role_permissions,
   });
 

@@ -34,6 +34,7 @@ export interface Account {
   role_permissions?: RolePermission[] | Record<string, RolePermission>;
   subscription_status?: "Active" | "Expired" | "Pending" | "Trial";
   association_id?: string;
+  association_name?: string;
   country?: string;
   assessment_total_due?: number | string;
   status?: string;

@@ -4,12 +4,14 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { useAppSelector } from "@/app/hooks";
+import { useAuth } from "@/context/AuthContext";
 import { AccessRestricted, ConfirmDialog, DataTable, EmptyState, LoadingSpinner, MonthPicker } from "@/components/common";
 import type { Column } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { FEATURES } from "@/constants/featureCodes";
+import { isFinancialViewOnlyRole } from "@/constants/roleCodes";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { usePermission } from "@/hooks/usePermission";
 import apiClient, { formatApiErrorDetail } from "@/services/api/apiClient";
@@ -20,9 +22,21 @@ import type { Invoice, InvoiceStatus } from "../types";
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 });
 
 export const InvoicesPage: React.FC = () => {
+  const { account } = useAuth();
+  const isFinancialViewOnly = isFinancialViewOnlyRole(account?.role_code);
   const associationId = useAppSelector((state) => state.ui.activeAssociationId);
   const [searchParams, setSearchParams] = useSearchParams();
-  const { canView, canCreate, canUpdate, canDelete, isLoading: permissionsLoading } = usePermission(FEATURES.INVOICE.FEATURE_CODE);
+  const {
+    canView,
+    canCreate: canCreatePermission,
+    canUpdate: canUpdatePermission,
+    canDelete: canDeletePermission,
+    isLoading: permissionsLoading,
+  } = usePermission(FEATURES.INVOICE.FEATURE_CODE);
+  const canCreate = canCreatePermission && !isFinancialViewOnly;
+  const canUpdate = canUpdatePermission && !isFinancialViewOnly;
+  const canDelete = canDeletePermission && !isFinancialViewOnly;
+  const canExport = !isFinancialViewOnly;
   const [vendorId, setVendorId] = useState("");
   const [status, setStatus] = useState<InvoiceStatus | "">("");
   const [fiscalPeriod, setFiscalPeriod] = useState("");
@@ -91,7 +105,7 @@ export const InvoicesPage: React.FC = () => {
   if (isError) return <EmptyState icon={FileText} title="Unable to load invoices" description="Please try again." className="min-h-[420px]" />;
 
   const filters = <div className="flex flex-wrap gap-2"><Select value={vendorId} onValueChange={(value) => resetPage(setVendorId, value)} options={[{ value: "", label: "All vendors" }, ...vendors.map((item) => ({ value: item.id, label: item.name }))]} placeholder="All vendors" size="sm" containerClassName="w-auto" className="min-w-44" /><Select value={status} onValueChange={(value) => resetPage(setStatus, value as InvoiceStatus | "")} options={[{ value: "", label: "All statuses" }, { value: "pending", label: "Pending" }, { value: "overdue", label: "Overdue" }, { value: "paid", label: "Paid" }, { value: "cancelled", label: "Cancelled" }]} placeholder="All statuses" size="sm" containerClassName="w-auto" className="min-w-36" /><MonthPicker value={fiscalPeriod} onChange={(value) => resetPage(setFiscalPeriod, value || "")} size="sm" containerClassName="w-44" /><Input value={search} onChange={(event) => resetPage(setSearch, event.target.value)} placeholder="Search vendor or invoice" leftIcon={<Search className="h-4 w-4" />} size="sm" containerClassName="w-64" /></div>;
-  const actions = <div className="flex gap-2"><Button variant="outline" onClick={exportInvoices}><Download className="h-4 w-4" /> Export Excel</Button>{canCreate && <Button onClick={() => { setEditing(null); setEditorOpen(true); }}><Plus className="h-4 w-4" /> Create Invoice</Button>}</div>;
+  const actions = <div className="flex gap-2">{canExport && <Button variant="outline" onClick={exportInvoices}><Download className="h-4 w-4" /> Export Excel</Button>}{canCreate && <Button onClick={() => { setEditing(null); setEditorOpen(true); }}><Plus className="h-4 w-4" /> Create Invoice</Button>}</div>;
 
   const noInvoices = !data?.total_count;
   const hasActiveFilters = Boolean(vendorId || status || fiscalPeriod || search.trim());
