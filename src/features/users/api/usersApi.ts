@@ -1,10 +1,35 @@
 import baseApi from "@/services/api/baseApi";
-import { unwrapApiData, unwrapApiList } from "@/services/api/response";
+import {
+  unwrapApiData,
+  unwrapApiList,
+  type ApiResponse,
+} from "@/services/api/response";
 import type {
   SystemUser,
   AdminCreateUserPayload,
   AdminUpdateUserPayload,
 } from "../types";
+
+interface BlockOption {
+  id: string;
+  name: string;
+}
+
+interface UnitOption {
+  id: string;
+  unit_number: string;
+}
+
+type UserCreateResponse = {
+  ok: boolean;
+  message: string;
+  activation_code?: string;
+};
+
+type UserMutationResponse = {
+  ok: boolean;
+  message: string;
+};
 
 export const usersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -17,8 +42,24 @@ export const usersApi = baseApi.injectEndpoints({
       providesTags: ["Users"],
     }),
 
+    getUserAssociationBlocks: builder.query<BlockOption[], string>({
+      query: (associationId) => ({
+        url: `/admin/users/associations/${associationId}/blocks`,
+        method: "GET",
+      }),
+      transformResponse: (response: unknown) => unwrapApiList<BlockOption>(response),
+    }),
+
+    getUserBlockUnits: builder.query<UnitOption[], string>({
+      query: (blockId) => ({
+        url: `/admin/users/blocks/${blockId}/units`,
+        method: "GET",
+      }),
+      transformResponse: (response: unknown) => unwrapApiList<UnitOption>(response),
+    }),
+
     createUser: builder.mutation<
-      { ok: boolean; message: string; activation_code?: string },
+      UserCreateResponse,
       AdminCreateUserPayload
     >({
       query: (data) => ({
@@ -27,12 +68,14 @@ export const usersApi = baseApi.injectEndpoints({
         data,
       }),
       transformResponse: (response: unknown) =>
-        unwrapApiData<{ ok: boolean; message: string; activation_code?: string }>(response),
+        unwrapApiData<UserCreateResponse>(
+          response as ApiResponse<UserCreateResponse> | UserCreateResponse
+        ),
       invalidatesTags: ["Users"],
     }),
 
     updateUser: builder.mutation<
-      { ok: boolean; message: string },
+      UserMutationResponse,
       { userId: string; data: AdminUpdateUserPayload }
     >({
       query: ({ userId, data }) => ({
@@ -41,12 +84,14 @@ export const usersApi = baseApi.injectEndpoints({
         data,
       }),
       transformResponse: (response: unknown) =>
-        unwrapApiData<{ ok: boolean; message: string }>(response),
+        unwrapApiData<UserMutationResponse>(
+          response as ApiResponse<UserMutationResponse> | UserMutationResponse
+        ),
       invalidatesTags: ["Users"],
     }),
 
     sendActivationCode: builder.mutation<
-      { ok: boolean; message: string },
+      UserMutationResponse,
       string
     >({
       query: (userId) => ({
@@ -54,7 +99,9 @@ export const usersApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       transformResponse: (response: unknown) =>
-        unwrapApiData<{ ok: boolean; message: string }>(response),
+        unwrapApiData<UserMutationResponse>(
+          response as ApiResponse<UserMutationResponse> | UserMutationResponse
+        ),
       invalidatesTags: ["Users"],
     }),
   }),
@@ -62,6 +109,8 @@ export const usersApi = baseApi.injectEndpoints({
 
 export const {
   useGetUsersQuery,
+  useGetUserAssociationBlocksQuery,
+  useGetUserBlockUnitsQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useSendActivationCodeMutation,

@@ -9,6 +9,7 @@ export interface SystemUser {
   activation_code?: string | null;
   activation_status?: string | null;
   role_name?: string | null;
+  role_code?: string | null;
   unit_id?: string | null;
   block_id?: string | null;
   association_id?: string | null;
@@ -30,12 +31,14 @@ export interface AdminCreateUserPayload {
   contact_number: string;
   role_id: string;
   association_id: string;
+  unit_id?: string;
 }
 
 export interface AdminUpdateUserPayload {
   email?: string;
   contact_number?: string;
   association_id?: string;
+  unit_id?: string;
   block_name?: string;
   unit_number?: string;
   role_name?: string;

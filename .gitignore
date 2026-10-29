@@ -12,3 +12,6 @@ dist/
 .env
 
 .vite
+
+
+.commit-copy-backup

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { UserPlus, Pencil, Shield, Check, Copy } from "lucide-react";
 import { FormModal } from "@/components/common/FormModal";
 import { FormField } from "@/components/common/FormField";
@@ -6,10 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useCreateUserMutation, useUpdateUserMutation } from "../api/usersApi";
+import {
+  useCreateUserMutation,
+  useGetUserAssociationBlocksQuery,
+  useGetUserBlockUnitsQuery,
+  useUpdateUserMutation,
+} from "../api/usersApi";
 import { useGetAssociationsQuery } from "@/features/associations/api";
 import { useGetRolesQuery } from "@/features/roles/api";
+import { isResidentVisitorRole } from "@/constants/roleCodes";
 import type { SystemUser, AdminCreateUserPayload } from "../types";
+
+const isValidMobileNumber = (value: string) => /^\d{10}$/.test(value);
 
 export interface UserFormModalProps {
   isOpen: boolean;
@@ -37,8 +45,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   });
 
   const [editRoleName, setEditRoleName] = useState("");
-  const [blockName, setBlockName] = useState("");
-  const [unitNumber, setUnitNumber] = useState("");
+  const [blockId, setBlockId] = useState("");
+  const [unitId, setUnitId] = useState("");
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -68,6 +76,50 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       !EXCLUDED_USER_ROLE_NAMES.includes((r.name || "").toLowerCase().trim())
   );
 
+  const selectedRole = useMemo(
+    () =>
+      isEditing
+        ? (roles.find((role) => role.name === editRoleName) ??
+          roles.find((role) => role.code === userToEdit?.role_code))
+        : roles.find((role) => role.id === formData.role_id),
+    [editRoleName, formData.role_id, isEditing, roles, userToEdit?.role_code]
+  );
+  const requiresResidence = isResidentVisitorRole(selectedRole?.code);
+
+  const { data: blocks = [], isLoading: isLoadingBlocks } =
+    useGetUserAssociationBlocksQuery(formData.association_id, {
+      skip: !isOpen || !requiresResidence || !formData.association_id,
+    });
+  const { data: units = [], isLoading: isLoadingUnits } =
+    useGetUserBlockUnitsQuery(blockId, {
+      skip: !isOpen || !requiresResidence || !blockId,
+    });
+
+  const associationOptions = useMemo(() => {
+    const currentAssociation =
+      isEditing && userToEdit?.association_id && userToEdit.association_name
+        ? {
+            value: userToEdit.association_id,
+            label: userToEdit.association_name,
+          }
+        : null;
+    const fetchedAssociations = associations.map((assoc) => ({
+      value: assoc.id,
+      label: `${assoc.name}${assoc.city ? ` (${assoc.city})` : ""}`,
+    }));
+
+    return [
+      { value: "", label: "Select an association..." },
+      ...(currentAssociation &&
+      !fetchedAssociations.some(
+        (association) => association.value === currentAssociation.value
+      )
+        ? [currentAssociation]
+        : []),
+      ...fetchedAssociations,
+    ];
+  }, [associations, isEditing, userToEdit]);
+
   useEffect(() => {
     if (isOpen) {
       if (userToEdit) {
@@ -80,8 +132,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           association_id: userToEdit.association_id || "",
         });
         setEditRoleName(userToEdit.role_name || "Homeowner");
-        setBlockName(userToEdit.block_name || "");
-        setUnitNumber(userToEdit.unit_number || "");
+        setBlockId(userToEdit.block_id || "");
+        setUnitId(userToEdit.unit_id || "");
         setCreatedCode(null);
       } else {
         setFormData({
@@ -93,13 +145,107 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           association_id: "",
         });
         setEditRoleName("Homeowner");
-        setBlockName("");
-        setUnitNumber("");
+        setBlockId("");
+        setUnitId("");
         setCreatedCode(null);
       }
       setErrors({});
     }
   }, [userToEdit, isOpen]);
+
+  useEffect(() => {
+    if (
+      !isEditing ||
+      !requiresResidence ||
+      blockId ||
+      !userToEdit?.block_name ||
+      userToEdit.association_id !== formData.association_id
+    ) {
+      return;
+    }
+
+    const matchingBlock = blocks.find(
+      (block) => block.name === userToEdit.block_name
+    );
+    if (matchingBlock) {
+      setBlockId(matchingBlock.id);
+    }
+  }, [
+    blockId,
+    blocks,
+    formData.association_id,
+    isEditing,
+    requiresResidence,
+    userToEdit?.association_id,
+    userToEdit?.block_name,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isEditing ||
+      !requiresResidence ||
+      unitId ||
+      !userToEdit?.unit_number ||
+      userToEdit.association_id !== formData.association_id
+    ) {
+      return;
+    }
+
+    const matchingUnit = units.find(
+      (unit) => unit.unit_number === userToEdit.unit_number
+    );
+    if (matchingUnit) {
+      setUnitId(matchingUnit.id);
+    }
+  }, [
+    formData.association_id,
+    isEditing,
+    requiresResidence,
+    unitId,
+    units,
+    userToEdit?.association_id,
+    userToEdit?.unit_number,
+  ]);
+
+  const blockOptions = useMemo(() => {
+    const currentBlock =
+      isEditing && blockId && userToEdit?.block_name
+        ? { value: blockId, label: userToEdit.block_name }
+        : null;
+    const fetchedBlocks = blocks.map((block) => ({
+      value: block.id,
+      label: block.name,
+    }));
+
+    return [
+      { value: "", label: "Select a block..." },
+      ...(currentBlock &&
+      !fetchedBlocks.some((block) => block.value === currentBlock.value)
+        ? [currentBlock]
+        : []),
+      ...fetchedBlocks,
+    ];
+  }, [blockId, blocks, isEditing, userToEdit?.block_name]);
+
+  const unitOptions = useMemo(() => {
+    const currentUnit =
+      isEditing && unitId && userToEdit?.unit_number
+        ? { value: unitId, label: userToEdit.unit_number }
+        : null;
+    const fetchedUnits = units.map((unit) => ({
+      value: unit.id,
+      label: unit.unit_number,
+    }));
+
+    return [
+      { value: "", label: "Select a unit..." },
+      ...(currentUnit &&
+      !fetchedUnits.some((unit) => unit.value === currentUnit.value)
+        ? [currentUnit]
+        : []),
+      ...fetchedUnits,
+    ];
+  }, [isEditing, unitId, units, userToEdit?.unit_number]);
 
   const handleFieldChange = (
     field: keyof AdminCreateUserPayload,
@@ -110,6 +256,36 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setErrors((prev) => {
         const next = { ...prev };
         delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleAssociationChange = (associationId: string) => {
+    handleFieldChange("association_id", associationId);
+    setBlockId("");
+    setUnitId("");
+  };
+
+  const handleBlockChange = (nextBlockId: string) => {
+    setBlockId(nextBlockId);
+    setUnitId("");
+    if (errors.block_id || errors.unit_id) {
+      setErrors((previous) => {
+        const next = { ...previous };
+        delete next.block_id;
+        delete next.unit_id;
+        return next;
+      });
+    }
+  };
+
+  const handleUnitChange = (nextUnitId: string) => {
+    setUnitId(nextUnitId);
+    if (errors.unit_id) {
+      setErrors((previous) => {
+        const next = { ...previous };
+        delete next.unit_id;
         return next;
       });
     }
@@ -138,12 +314,26 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         setErrors({ contact_number: "Contact number is required" });
         return false;
       }
+      if (!isValidMobileNumber(formData.contact_number)) {
+        setErrors({
+          contact_number: "Enter a valid 10-digit mobile number",
+        });
+        return false;
+      }
       if (!formData.role_id) {
         setErrors({ role_id: "Please select a role" });
         return false;
       }
       if (!formData.association_id) {
         setErrors({ association_id: "Please select an association" });
+        return false;
+      }
+      if (requiresResidence && !blockId) {
+        setErrors({ block_id: "Please select a block" });
+        return false;
+      }
+      if (requiresResidence && !unitId) {
+        setErrors({ unit_id: "Please select a unit" });
         return false;
       }
     } else {
@@ -160,8 +350,22 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         setErrors({ contact_number: "Contact number is required" });
         return false;
       }
+      if (!isValidMobileNumber(formData.contact_number)) {
+        setErrors({
+          contact_number: "Enter a valid 10-digit mobile number",
+        });
+        return false;
+      }
       if (!editRoleName) {
         setErrors({ role_name: "Please select a role" });
+        return false;
+      }
+      if (requiresResidence && !blockId) {
+        setErrors({ block_id: "Please select a block" });
+        return false;
+      }
+      if (requiresResidence && !unitId) {
+        setErrors({ unit_id: "Please select a unit" });
         return false;
       }
     }
@@ -191,6 +395,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           contact_number: formData.contact_number.trim(),
           role_id: formData.role_id,
           association_id: formData.association_id,
+          unit_id: requiresResidence ? unitId : undefined,
         }).unwrap();
 
         if (res.activation_code) {
@@ -211,8 +416,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             contact_number: formData.contact_number.trim(),
             role_name: editRoleName,
             association_id: formData.association_id || undefined,
-            block_name: blockName.trim() || undefined,
-            unit_number: unitNumber.trim() || undefined,
+            unit_id: requiresResidence ? unitId : undefined,
           },
         }).unwrap();
 
@@ -367,10 +571,15 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           >
             <Input
               type="tel"
-              placeholder="+91 98765 43210"
+              placeholder="9876543210"
               value={formData.contact_number}
+              inputMode="numeric"
+              maxLength={10}
               onChange={(e) =>
-                handleFieldChange("contact_number", e.target.value)
+                handleFieldChange(
+                  "contact_number",
+                  e.target.value.replace(/\D/g, "").slice(0, 10)
+                )
               }
               disabled={isSaving}
             />
@@ -437,16 +646,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           >
             <Select
               value={formData.association_id}
-              onChange={(e) =>
-                handleFieldChange("association_id", e.target.value)
-              }
-              options={[
-                { value: "", label: "Select an association..." },
-                ...associations.map((assoc) => ({
-                  value: assoc.id,
-                  label: `${assoc.name}${assoc.city ? ` (${assoc.city})` : ""}`,
-                })),
-              ]}
+              onChange={(e) => handleAssociationChange(e.target.value)}
+              options={associationOptions}
               placeholder="Select an association..."
               disabled={isSaving || isLoadingAssocs}
               error={Boolean(errors.association_id)}
@@ -454,26 +655,31 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           </FormField>
         </div>
 
-        {/* Block & Unit (Edit Mode only) */}
-        {isEditing && (
+        {requiresResidence && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            <FormField label="Block Name">
-              <Input
-                type="text"
-                placeholder="e.g. Tower A"
-                value={blockName}
-                onChange={(e) => setBlockName(e.target.value)}
-                disabled={isSaving}
+            <FormField label="Block" required error={errors.block_id}>
+              <Select
+                value={blockId}
+                onChange={(e) => handleBlockChange(e.target.value)}
+                options={blockOptions}
+                placeholder="Select a block..."
+                disabled={
+                  isSaving ||
+                  isLoadingBlocks ||
+                  !formData.association_id
+                }
+                error={Boolean(errors.block_id)}
               />
             </FormField>
 
-            <FormField label="Unit Number">
-              <Input
-                type="text"
-                placeholder="e.g. 104"
-                value={unitNumber}
-                onChange={(e) => setUnitNumber(e.target.value)}
-                disabled={isSaving}
+            <FormField label="Unit" required error={errors.unit_id}>
+              <Select
+                value={unitId}
+                onChange={(e) => handleUnitChange(e.target.value)}
+                options={unitOptions}
+                placeholder="Select a unit..."
+                disabled={isSaving || isLoadingUnits || !blockId}
+                error={Boolean(errors.unit_id)}
               />
             </FormField>
           </div>
