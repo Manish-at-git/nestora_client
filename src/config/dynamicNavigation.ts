@@ -54,18 +54,24 @@ export const checkFeatureAccess = (
             (p.url && p.url.toLowerCase() === normalized)
         );
         if (found) {
-          return Boolean(found.can_view);
+          return found.included_in_plan !== false && Boolean(found.can_view);
         }
         return false;
       }
     } else if (typeof account.role_permissions === "object" && Object.keys(account.role_permissions).length > 0) {
       // 1. Direct key match (e.g. "Amenities", "amenities", "/amenities")
       if (account.role_permissions[featureIdentifier]) {
-        return Boolean(account.role_permissions[featureIdentifier].can_view);
+        return (
+          account.role_permissions[featureIdentifier].included_in_plan !== false &&
+          Boolean(account.role_permissions[featureIdentifier].can_view)
+        );
       }
       // 2. Lowercase match
       if (account.role_permissions[normalized]) {
-        return Boolean(account.role_permissions[normalized].can_view);
+        return (
+          account.role_permissions[normalized].included_in_plan !== false &&
+          Boolean(account.role_permissions[normalized].can_view)
+        );
       }
       // 3. Match against feature_name or feature_code
       const match = Object.values(account.role_permissions).find(
@@ -74,7 +80,7 @@ export const checkFeatureAccess = (
           (p.feature_code && p.feature_code.toLowerCase() === normalized)
       );
       if (match) {
-        return Boolean(match.can_view);
+        return match.included_in_plan !== false && Boolean(match.can_view);
       }
       return false;
     }
@@ -99,9 +105,45 @@ export const checkFeatureAccess = (
  */
 export const buildDynamicNavItemsFromPermissions = (
   permissions: RolePermission[],
-  role?: string
+  role?: string,
+  associationAllowedFeatures?: string[],
 ): NavItem[] => {
+  const isSuperAdmin = role?.toLowerCase() === ROLE_CODE.SUPER_ADMIN;
   // A zero position keeps the permission but hides the item from the sidebar.
+  const planFeatureNames = new Set(
+    (associationAllowedFeatures || []).map((feature) => feature.trim().toLowerCase()),
+  );
+  const planFeatureIds = new Set(
+    permissions
+      .filter((permission) => {
+        if (associationAllowedFeatures === undefined) return true;
+        const candidates = [
+          permission.feature_code,
+          permission.feature_name,
+        ].filter(Boolean).map((value) => value!.trim().toLowerCase());
+        return candidates.some((candidate) => planFeatureNames.has(candidate));
+      })
+      .map((permission) => permission.feature_id)
+      .filter(Boolean) as string[],
+  );
+  let changed = true;
+  while (changed) {
+    changed = false;
+    permissions.forEach((permission) => {
+      if (permission.feature_id && planFeatureIds.has(permission.feature_id) && permission.parent_id) {
+        if (!planFeatureIds.has(permission.parent_id)) {
+          planFeatureIds.add(permission.parent_id);
+          changed = true;
+        }
+      }
+    });
+  }
+
+  const isFeatureLocked = (permission: RolePermission): boolean =>
+    !isSuperAdmin &&
+    (permission.included_in_plan === false ||
+      (associationAllowedFeatures !== undefined && !planFeatureIds.has(permission.feature_id || "")));
+
   const allowed = permissions.filter(
     (p) => Boolean(p.can_view) && Number(p.sidebar_order ?? 0) > 0
   );
@@ -111,7 +153,7 @@ export const buildDynamicNavItemsFromPermissions = (
   // Map to store children by parent_id
   const childrenMap = new Map<
     string,
-    { key: string; label: string; path?: string; sidebarOrder: number }[]
+    { key: string; label: string; path?: string; sidebarOrder: number; isLocked?: boolean }[]
   >();
 
   allowed.forEach((p) => {
@@ -123,6 +165,7 @@ export const buildDynamicNavItemsFromPermissions = (
         label: p.feature_name || "",
         path: p.url || undefined,
         sidebarOrder: Number(p.sidebar_order ?? 0),
+        isLocked: isFeatureLocked(p),
       });
       childrenMap.set(p.parent_id, list);
     }
@@ -145,6 +188,7 @@ export const buildDynamicNavItemsFromPermissions = (
         label: p.feature_name || "",
         path: p.url || subItems?.[0]?.path,
         icon: p.icon || "LayoutGrid",
+        isLocked: isFeatureLocked(p),
         subItems: subItems && subItems.length > 0 ? subItems : undefined,
       });
     }
@@ -189,6 +233,7 @@ export const getNavItemsForAccount = (
     return buildDynamicNavItemsFromPermissions(
       account.role_permissions,
       account.role_code,
+      associationAllowedFeatures,
     );
   }
 
@@ -210,7 +255,9 @@ export const getNavItemsForAccount = (
       associationAllowedFeatures,
     );
 
-    if (!isAdmin && isLocked) return;
+    if (isLocked && !(isAdmin && associationAllowedFeatures !== undefined)) {
+      return;
+    }
 
     if (item.subItems && item.subItems.length > 0) {
       const mappedSub = item.subItems
@@ -220,7 +267,9 @@ export const getNavItemsForAccount = (
             account,
             associationAllowedFeatures,
           );
-          if (!isAdmin && subLocked) return null;
+          if (subLocked && !(isAdmin && associationAllowedFeatures !== undefined)) {
+            return null;
+          }
           return { ...sub, isLocked: subLocked };
         })
         .filter(Boolean) as typeof item.subItems;

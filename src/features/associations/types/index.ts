@@ -17,10 +17,18 @@ export interface Association {
   current_plan_id?: string | null;
   plan_name?: string | null;
   subscription_status?: string | null;
+  effective_subscription_status?: string;
   subscription_start?: string | null;
   subscription_end?: string | null;
   renewal_date?: string | null;
   payment_status?: string | null;
+  trial_days?: number;
+  trial_days_left?: number;
+  trial_display?: string;
+  is_trial_expired?: boolean;
+  subscription_days_left?: number | null;
+  subscription_expiry_display?: string;
+  is_subscription_expired?: boolean;
   unit_count?: number;
   is_active?: boolean | number;
   allowed_features?: string[];

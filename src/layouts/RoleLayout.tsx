@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Building, Wallet, CheckCircle, MessageSquare, Menu, MapPin } from "lucide-react";
+import { Building, Wallet, MessageSquare, Menu, MapPin } from "lucide-react";
 import { NavItem } from "@/types/navigation";
 import { getNavItemsForAccount } from "@/config/dynamicNavigation";
 import {
   UpgradePlanModal,
-  AdminHomeownerSearch,
+  PlanExpiredModal,
   NotificationDropdown,
 } from "@/components/common";
 import { Select } from "@/components/ui/select";
@@ -54,7 +54,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   children,
   associationAllowedFeatures,
 }) => {
-  const { account, profile } = useAuth();
+  const { account, profile, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -77,6 +77,13 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   const { data: adminAssociations = [] } = useGetAdminAssociationsQuery(undefined, {
     skip: !canSelectAssociation,
   });
+  const selectedAssociation = adminAssociations.find(
+    (association) => String(association.id) === String(activeAssociationId),
+  );
+  const selectedAssociationFeatures =
+    activeAssociationId && activeAssociationId !== "ALL"
+      ? selectedAssociation?.allowed_features
+      : undefined;
 
   const pageHeader = useAppSelector((state) => state.ui.pageHeader);
 
@@ -276,7 +283,7 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
   const authorizedNavItems = getNavItemsForAccount(
     account,
     navItems,
-    associationAllowedFeatures
+    associationAllowedFeatures ?? selectedAssociationFeatures,
   );
 
   const isDashboardOverview =
@@ -405,40 +412,12 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
             </div>
           </div>
 
-          {/* Secondary Row: Admin Search & Custom Header Controls */}
-          {(isAdmin || headerControls) && (
+          {/* Secondary Row: Page-specific header controls */}
+          {headerControls && (
             <div className="flex items-center gap-2.5 flex-wrap w-full pt-1 sm:pt-0">
-              {isAdmin && (
-                <div className="flex-1 sm:flex-initial min-w-[180px] max-w-full">
-                  <AdminHomeownerSearch />
-                </div>
-              )}
-
-              {isAdmin && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-                    title="Approvals"
-                  >
-                    <CheckCircle size={18} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-                    title="Feedback"
-                  >
-                    <MessageSquare size={18} />
-                  </button>
-                </div>
-              )}
-
-              {headerControls && (
-                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                  {headerControls}
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                {headerControls}
+              </div>
             </div>
           )}
         </header>
@@ -458,6 +437,16 @@ export const RoleLayout: React.FC<RoleLayoutProps> = ({
         isOpen={!!upgradeModalFeature}
         onClose={() => setUpgradeModalFeature(null)}
         featureName={upgradeModalFeature}
+      />
+      <PlanExpiredModal
+        isOpen={
+          isResidentOrMember &&
+          (Boolean(account?.is_subscription_expired) ||
+            account?.subscription_status?.toLowerCase() === "inactive")
+        }
+        associationName={account?.association_name}
+        state={account?.subscription_status?.toLowerCase() === "inactive" ? "inactive" : "expired"}
+        onAction={() => void logout()}
       />
 
     </div>

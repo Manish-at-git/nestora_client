@@ -684,7 +684,7 @@ export function DataTable<TData extends Record<string, any>>({
               <Button
                 variant="outline"
                 onClick={() => setColumnFilters([])}
-                className="h-8.5 px-2.5 rounded-xl border-dashed border-slate-300 text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1.5"
+                className="px-2.5 rounded-xl border-dashed border-slate-300 text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1.5"
               >
                 <span>Clear {columnFilters.length} column filter{columnFilters.length > 1 ? "s" : ""}</span>
                 <X size={12} />

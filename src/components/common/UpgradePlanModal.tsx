@@ -1,5 +1,5 @@
 import React from "react";
-import { Lock, Sparkles, X, ChevronRight } from "lucide-react";
+import { Lock, Sparkles, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { backdropVariants, modalVariants } from "@/lib/animations";
 
@@ -48,7 +48,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
             <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-8 text-center text-white">
               <div className="w-20 h-20 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner mb-6 relative border border-white/20">
                 <Lock size={36} className="text-white drop-shadow-md" />
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center shadow-lg">
                   <Sparkles size={16} className="text-amber-900" />
                 </div>
               </div>
@@ -77,16 +77,9 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={onClose}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-3.5 px-4 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] cursor-pointer"
-              >
-                Contact Administrator <ChevronRight size={18} />
-              </button>
-
-              <p className="text-center text-xs text-slate-400 mt-4">
-                Reach out to your board or community manager to request an
-                upgrade.
+              <p className="text-center text-sm leading-6 text-slate-500">
+                Contact your association administrator to unlock this feature
+                and request a plan upgrade.
               </p>
             </div>
           </motion.div>

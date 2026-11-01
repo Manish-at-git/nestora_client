@@ -164,7 +164,8 @@ export const usePermission = (featureCodeOrName?: string): PermissionResult => {
 
     if (matchedPerm) {
       const canCreate = Boolean(matchedPerm.can_create);
-      const canView = Boolean(matchedPerm.can_view);
+      const canView =
+        matchedPerm.included_in_plan !== false && Boolean(matchedPerm.can_view);
       const canUpdate = Boolean(matchedPerm.can_update || matchedPerm.can_edit);
       const canDelete = Boolean(matchedPerm.can_delete);
 

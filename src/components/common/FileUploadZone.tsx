@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 export interface FileUploadZoneProps {
   value?: string;
+  preselectedFileName?: string;
   onChange: (fileUrl: string) => void;
   onUpload?: (file: File) => Promise<string | void>;
   onFileRead?: (file: File) => Promise<void> | void;
@@ -33,6 +34,7 @@ export interface FileUploadZoneProps {
 
 export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   value,
+  preselectedFileName,
   onChange,
   onUpload,
   onFileRead,
@@ -132,7 +134,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({
   };
 
   const getCleanDisplayName = (url: string) => {
-    if (fileName) return fileName;
+    if (fileName || preselectedFileName) return fileName || preselectedFileName;
     try {
       const parts = url.split("/");
       const lastPart = parts[parts.length - 1];

@@ -8,7 +8,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { COUNTRIES, getCurrencySymbol } from "@/utils/currency";
+import { COUNTRIES, getCurrencySymbol, normalizeCountryName } from "@/utils/currency";
 import { PlanFeaturesSelector } from "./PlanFeaturesSelector";
 import {
   useCreateSubscriptionPlanMutation,
@@ -62,7 +62,7 @@ export const SubscriptionPlanFormModal: React.FC<SubscriptionPlanFormModalProps>
         setFormData({
           name: planToEdit.name || "",
           code: planToEdit.code || "",
-          country: planToEdit.country || "",
+          country: normalizeCountryName(planToEdit.country),
           description: planToEdit.description || "",
           monthly_price:
             planToEdit.monthly_price !== null && planToEdit.monthly_price !== undefined

@@ -50,17 +50,18 @@ export const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
           sidebarCollapsed ? "justify-center px-2" : "justify-between"
         )}
       >
-        <div className="flex items-center gap-3 truncate">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="shrink-0 text-white/80 group-hover:text-white transition-transform duration-200 group-hover:scale-105">
             {renderIcon(item.icon)}
           </div>
           {!sidebarCollapsed && (
             <span className="truncate text-[13.5px]">{item.label}</span>
           )}
-          {item.isLocked && !sidebarCollapsed && (
-            <Lock size={13} className="opacity-50 ml-auto mr-1" />
-          )}
         </div>
+
+        {item.isLocked && !sidebarCollapsed && (
+          <Lock size={13} className="ml-auto mr-1 shrink-0 opacity-50" />
+        )}
 
         {hasSubItems && !sidebarCollapsed && (
           <span

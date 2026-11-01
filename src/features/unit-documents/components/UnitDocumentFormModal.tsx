@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useAppForm } from "@/hooks/useAppForm";
 import {
   uploadDocumentAsset,
@@ -53,6 +54,7 @@ const emptyValues = (associationId = ""): UnitDocumentFormValues => ({
   file_url: "",
   file_type: "",
   file_size_kb: null,
+  is_visible_to_board: false,
 });
 
 export const UnitDocumentFormModal: React.FC<
@@ -149,6 +151,7 @@ export const UnitDocumentFormModal: React.FC<
       file_url: documentToEdit.file_url || "",
       file_type: documentToEdit.file_type || "",
       file_size_kb: documentToEdit.file_size_kb ?? null,
+      is_visible_to_board: documentToEdit.is_visible_to_board,
     });
   }, [documentToEdit, isOpen, reset, selectedAssociationId]);
 
@@ -192,6 +195,7 @@ export const UnitDocumentFormModal: React.FC<
         name: data.name.trim(),
         type: documentType,
         description: data.description?.trim() || undefined,
+        is_visible_to_board: data.is_visible_to_board,
       };
 
       if (documentToEdit) {
@@ -228,6 +232,7 @@ export const UnitDocumentFormModal: React.FC<
     "name",
     "type_id",
     "description",
+    "is_visible_to_board",
     "file_url",
   ];
   const activeErrorKey = fieldOrder.find((key) => errors[key]);
@@ -391,6 +396,27 @@ export const UnitDocumentFormModal: React.FC<
               {...register("description")}
             />
           </FormField>
+
+          {isAdmin ? null : (
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-slate-800">Show to Board Members</p>
+                <p className="text-xs text-slate-500">Board members can view this document when enabled.</p>
+              </div>
+              <Controller
+                name="is_visible_to_board"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isDisabled}
+                    aria-label="Show document to board members"
+                  />
+                )}
+              />
+            </div>
+          )}
         </section>
 
         {!documentToEdit ? (

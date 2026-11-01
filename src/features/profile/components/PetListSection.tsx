@@ -48,6 +48,7 @@ export const PetListSection: React.FC<PetListSectionProps> = ({
           title="No pets registered"
           description="Register your household pets to keep community records and vaccination details up to date."
           className="py-10"
+          showIcon={false}
         />
       ) : (
         <div className="space-y-3.5">

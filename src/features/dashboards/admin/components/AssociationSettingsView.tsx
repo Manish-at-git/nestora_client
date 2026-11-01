@@ -22,6 +22,7 @@ export const AssociationSettingsView: React.FC<AssociationSettingsViewProps> = (
   adminAssociations,
   onBack,
 }) => {
+  const associationId = association?.id;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<AssociationSettings>({
@@ -31,6 +32,9 @@ export const AssociationSettingsView: React.FC<AssociationSettingsViewProps> = (
       frequency: "Monthly",
       default_amount: 0,
       due_day_of_month: 1,
+      is_advanced_enabled: false,
+      owner_occupied_amount: null,
+      rented_amount: null,
     },
     fine_rules: [],
   });
@@ -61,6 +65,9 @@ export const AssociationSettingsView: React.FC<AssociationSettingsViewProps> = (
           frequency: "Monthly",
           default_amount: 0,
           due_day_of_month: 1,
+          is_advanced_enabled: false,
+          owner_occupied_amount: null,
+          rented_amount: null,
         },
         fine_rules: data.fine_rules || [],
       });
@@ -184,12 +191,16 @@ export const AssociationSettingsView: React.FC<AssociationSettingsViewProps> = (
         <AssessmentSetupCard
           rules={settings.assessment_rules}
           currencySymbol={currencySymbol}
+          associationId={associationId}
           onChange={(updated) =>
             setSettings((prev) => ({
               ...prev,
               assessment_rules: { ...prev.assessment_rules, ...updated },
             }))
           }
+          onOccupancyChanged={() => {
+            void fetchSettings();
+          }}
         />
       </div>
 

@@ -23,6 +23,7 @@ import {
   FileText,
   ExternalLink,
   Building,
+  Clock3,
 } from "lucide-react";
 
 export interface ViewAssociationModalProps {
@@ -64,7 +65,7 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
     subscription_end: "",
     renewal_date: "",
     payment_status: "Pending",
-    subscription_status: "Trial",
+    subscription_status: "Active",
   });
 
   useEffect(() => {
@@ -87,7 +88,12 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
           ? activeAssociation.renewal_date.slice(0, 10)
           : "",
         payment_status: activeAssociation.payment_status || "Pending",
-        subscription_status: activeAssociation.subscription_status || "Trial",
+        subscription_status:
+          activeAssociation.subscription_status?.toLowerCase() === "inactive" ||
+          activeAssociation.subscription_status?.toLowerCase() === "cancelled" ||
+          activeAssociation.subscription_status?.toLowerCase() === "canceled"
+            ? "Inactive"
+            : "Active",
       });
     }
   }, [activeAssociation, isOpen, plans]);
@@ -125,7 +131,7 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
     { value: "", label: "-- No Plan Selected --" },
     ...activePlans.map((p) => {
       const countryFlag =
-        COUNTRIES.find((c) => c.name === p.country)?.flag || "";
+        COUNTRIES.find((c) => c.name === p.country || c.code === p.country)?.flag || "";
       return {
         value: p.id,
         label: `${p.name} ${countryFlag ? `(${countryFlag})` : ""} (${currencySymbol}${p.monthly_price}/mo)`,
@@ -135,9 +141,7 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
 
   const statusOptions = [
     { value: "Active", label: "Active" },
-    { value: "Trial", label: "Trial" },
-    { value: "Expired", label: "Expired" },
-    { value: "Cancelled", label: "Cancelled" },
+    { value: "Inactive", label: "Inactive" },
   ];
 
   const paymentStatusOptions = [
@@ -150,11 +154,13 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
   const isActive =
     activeAssociation.is_active === true ||
     activeAssociation.is_active === 1 ||
-    (activeAssociation.subscription_status || "").toLowerCase() === "active";
+    (activeAssociation.effective_subscription_status || activeAssociation.subscription_status || "").toLowerCase() === "active";
 
-  const statusText = activeAssociation.subscription_status
-    ? activeAssociation.subscription_status.charAt(0).toUpperCase() +
-      activeAssociation.subscription_status.slice(1).toLowerCase()
+  const resolvedStatus =
+    activeAssociation.effective_subscription_status || activeAssociation.subscription_status;
+  const statusText = resolvedStatus
+    ? resolvedStatus.charAt(0).toUpperCase() +
+      resolvedStatus.slice(1).toLowerCase()
     : isActive
     ? "Active"
     : "Inactive";
@@ -310,6 +316,27 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
             </div>
           )}
 
+          {activeAssociation.subscription_end ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-amber-900">
+                <Clock3 size={15} className="text-amber-700" />
+                Plan expiry
+              </div>
+              {activeAssociation.is_subscription_expired ? (
+                <StatusPill variant="danger" size="xs" shape="rounded">Expired</StatusPill>
+              ) : (
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-amber-900">
+                    {activeAssociation.subscription_expiry_display}
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    Ends {new Date(`${activeAssociation.subscription_end}T00:00:00`).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
+
           <form onSubmit={handleSaveSubscription} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
               {/* Plan select using common Select */}
@@ -333,7 +360,7 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
               <div>
                 <FormField label="Status">
                   <Select
-                    value={subForm.subscription_status || "Trial"}
+                    value={subForm.subscription_status || "Active"}
                     onValueChange={(val) =>
                       setSubForm((prev) => ({
                         ...prev,

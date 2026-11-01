@@ -20,7 +20,6 @@ export const SignInPage: React.FC = () => {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      toast.success("Signed in.");
       navigate("/");
     } catch (e: any) {
       // The new server returns its common { success, message, data } envelope.

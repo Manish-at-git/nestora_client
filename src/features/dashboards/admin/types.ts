@@ -22,6 +22,9 @@ export interface AssessmentRules {
   frequency: string;
   default_amount: number;
   due_day_of_month: number;
+  is_advanced_enabled: boolean;
+  owner_occupied_amount: number | null;
+  rented_amount: number | null;
 }
 
 export interface FineRule {

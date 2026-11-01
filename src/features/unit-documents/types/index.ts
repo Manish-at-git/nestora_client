@@ -13,6 +13,7 @@ export interface UnitDocumentRecord {
   file_url?: string | null;
   file_type?: string | null;
   file_size_kb?: number | null;
+  is_visible_to_board: boolean;
   created_at?: string | null;
 }
 
@@ -32,10 +33,16 @@ export interface CreateUnitDocumentPayload {
   file_url: string;
   file_type?: string;
   file_size_kb?: number | null;
+  is_visible_to_board?: boolean;
 }
 
 export interface UpdateUnitDocumentPayload {
   name: string;
   type: string;
   description?: string;
+  file_url?: string;
+  file_name?: string;
+  file_type?: string;
+  file_size_kb?: number | null;
+  is_visible_to_board?: boolean;
 }

@@ -23,8 +23,11 @@ import {
   ExperienceFormModal,
   SuperAdminOverviewCard,
   SuperAdminSecurityCard,
+  TenantDocumentsUploadModal,
+  TenantDocumentsSection,
 } from "../components";
 import { isSuperAdmin } from "@/lib/utils";
+import { useGetUnitDocumentsQuery } from "@/features/unit-documents/api";
 import {
   Vehicle,
   VehicleFormData,
@@ -44,6 +47,7 @@ export const UserProfilePage: React.FC = () => {
   const isSuper = isSuperAdmin(roleCode);
   const isEmployee = [ROLES_STRING.ADMIN, ROLES_STRING.ACCOUNTANT, ROLES_STRING.CSR, ROLES_STRING.SECURITY].includes(roleCode);
   const isHomeownerGroup = [ROLES_STRING.HOMEOWNER, ROLES_STRING.BOARD_MEMBER, ROLES_STRING.COMMITTEE_MEMBER, ROLES_STRING.TENANT].includes(roleCode);
+  const isTenant = roleCode === ROLES_STRING.TENANT;
 
   usePageHeader({
     title: isSuper ? "Super Administrator Profile" : "My Profile",
@@ -54,6 +58,9 @@ export const UserProfilePage: React.FC = () => {
 
   const { data: profileData, isLoading, refetch } = useGetProfileDataQuery(undefined, {
     refetchOnMountOrArgChange: true,
+  });
+  const { data: unitDocuments = [], isLoading: isLoadingUnitDocuments, refetch: refetchUnitDocuments } = useGetUnitDocumentsQuery(undefined, {
+    skip: !isTenant,
   });
 
   const [deleteVehicle, { isLoading: isDeletingVehicle }] = useDeleteVehicleMutation();
@@ -77,6 +84,7 @@ export const UserProfilePage: React.FC = () => {
   const [showExpModal, setShowExpModal] = useState(false);
   const [editingExp, setEditingExp] = useState<ExperienceFormData | null>(null);
   const [experienceToDelete, setExperienceToDelete] = useState<Experience | null>(null);
+  const [showTenantDocumentsModal, setShowTenantDocumentsModal] = useState(false);
 
   const associationName = isSuper
     ? "Nestora Platform"
@@ -216,6 +224,9 @@ export const UserProfilePage: React.FC = () => {
   const pets = profileData?.pets || [];
   const education = profileData?.education || [];
   const experience = profileData?.experience || [];
+  const tenantDocuments = unitDocuments.filter(
+    (document) => document.user_id === account?.id && ["Rent Agreement", "Police Verification"].includes(document.type),
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -279,6 +290,15 @@ export const UserProfilePage: React.FC = () => {
         </div>
       )}
 
+      {isTenant ? (
+        <TenantDocumentsSection
+          documents={tenantDocuments}
+          isLoading={isLoadingUnitDocuments}
+          onAdd={() => setShowTenantDocumentsModal(true)}
+          onDeleted={refetchUnitDocuments}
+        />
+      ) : null}
+
       {/* Modals */}
       <VehicleFormModal
         isOpen={showVehicleModal}
@@ -306,6 +326,13 @@ export const UserProfilePage: React.FC = () => {
         onClose={() => setShowExpModal(false)}
         initialData={editingExp}
         onSuccess={refetch}
+      />
+
+      <TenantDocumentsUploadModal
+        isOpen={showTenantDocumentsModal}
+        onClose={() => setShowTenantDocumentsModal(false)}
+        onSuccess={refetchUnitDocuments}
+        documents={tenantDocuments}
       />
 
       {/* Delete Confirmation Modals */}

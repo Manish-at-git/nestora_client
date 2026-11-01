@@ -15,6 +15,7 @@ export interface EmptyStateProps {
     onClick: () => void;
   };
   className?: string;
+  showIcon?: boolean;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -26,6 +27,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onAction,
   action,
   className,
+  showIcon = true,
 }) => {
   const label = actionText || actionLabel || action?.label;
   const handler = onAction || action?.onClick;
@@ -47,11 +49,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         className
       )}
     >
-      <div className="p-4 rounded-2xl bg-white shadow-sm border border-slate-100 mb-4 flex items-center justify-center">
-        {renderIcon()}
-      </div>
+      {showIcon && (
+        <div className="p-4 rounded-2xl bg-white shadow-sm border border-slate-100 mb-4 flex items-center justify-center">
+          {renderIcon()}
+        </div>
+      )}
       <h4 className="text-lg font-display font-bold text-slate-800 mb-1">{title}</h4>
-      <p className="text-sm text-slate-500 max-w-sm mb-6">{description}</p>
+      <p className="text-sm text-slate-500 max-w-sm">{description}</p>
       {/* {label && handler && (
         <Button onClick={handler} variant="default" className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white cursor-pointer">
           {label}

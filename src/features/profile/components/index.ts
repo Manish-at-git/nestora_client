@@ -3,6 +3,8 @@ export * from "./ProfileDetailsCard";
 export * from "./VehicleListSection";
 export * from "./VehicleFormModal";
 export * from "./PetListSection";
+export * from "./TenantDocumentsUploadModal";
+export * from "./TenantDocumentsSection";
 export * from "./PetFormModal";
 export * from "./EducationListSection";
 export * from "./EducationFormModal";

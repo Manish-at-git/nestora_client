@@ -23,6 +23,7 @@ export interface RolePermission {
   url?: string | null;
   order_index?: number;
   sidebar_order?: number;
+  included_in_plan?: boolean;
 }
 
 export interface Account {
@@ -33,6 +34,9 @@ export interface Account {
   allowed_features?: string[];
   role_permissions?: RolePermission[] | Record<string, RolePermission>;
   subscription_status?: "Active" | "Expired" | "Pending" | "Trial";
+  subscription_days_left?: number | null;
+  subscription_expiry_display?: string;
+  is_subscription_expired?: boolean;
   association_id?: string;
   association_name?: string;
   country?: string;

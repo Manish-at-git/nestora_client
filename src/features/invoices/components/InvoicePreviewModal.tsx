@@ -43,9 +43,7 @@ const InvoiceSheet: React.FC<InvoiceSheetProps> = ({ invoice, printable = false 
   >
     <header className="flex items-start justify-between border-b border-slate-100 p-5">
       <div className="flex gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">
-          N
-        </div>
+        <img src="/icon.png" alt="Nestora" className="h-10 w-10 shrink-0 object-contain" />
         <div>
           <p className="font-display text-lg font-bold text-slate-900">Nestora</p>
           <p className="text-[10px] text-slate-500">Association Management &amp; Billing</p>

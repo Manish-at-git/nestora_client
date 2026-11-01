@@ -415,7 +415,7 @@ export const InvoiceEditorModal: React.FC<Props> = ({
           </div>
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
             <div className="flex items-start justify-between border-b border-slate-100 p-5">
-              <div className="flex gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">N</div><div><p className="font-display text-lg font-bold text-slate-900">Nestora</p><p className="text-[10px] text-slate-500">Association Management & Billing</p></div></div>
+              <div className="flex gap-3"><img src="/icon.png" alt="Nestora" className="h-10 w-10 shrink-0 object-contain" /><div><p className="font-display text-lg font-bold text-slate-900">Nestora</p><p className="text-[10px] text-slate-500">Association Management & Billing</p></div></div>
               <div className="text-right"><p className="text-xs font-bold text-slate-900">{invoice?.invoice_number || "Assigned on save"}</p><span className="mt-1 inline-flex rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{form.status}</span></div>
             </div>
             <div className="space-y-5 p-5 text-xs">

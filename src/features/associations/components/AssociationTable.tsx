@@ -4,6 +4,7 @@ import {
   Layers,
   Eye,
   Plus,
+  Clock3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column, StatusPill } from "@/components/common";
@@ -134,6 +135,34 @@ export const AssociationTable: React.FC<AssociationTableProps> = ({
           ),
       },
       {
+        key: "subscription_days_left",
+        header: "Plan Expiry",
+        sortable: true,
+        width: "125px",
+        render: (row) => {
+          if (!row.subscription_end) {
+            return <span className="text-xs text-slate-400 italic">No end date</span>;
+          }
+          if (row.is_subscription_expired) {
+            return (
+              <StatusPill variant="danger" shape="rounded" size="xs">
+                Expired
+              </StatusPill>
+            );
+          }
+          return (
+            <div className="space-y-0.5">
+              <StatusPill variant="warning" shape="rounded" size="xs">
+                {row.subscription_expiry_display || "Plan expiry"}
+              </StatusPill>
+              <p className="pl-1 text-[10px] text-slate-500">
+                Ends {new Date(`${row.subscription_end}T00:00:00`).toLocaleDateString()}
+              </p>
+            </div>
+          );
+        },
+      },
+      {
         key: "is_active",
         header: "Status",
         sortable: true,
@@ -143,11 +172,12 @@ export const AssociationTable: React.FC<AssociationTableProps> = ({
           const isActive =
             row.is_active === true ||
             row.is_active === 1 ||
-            (row.subscription_status || "").toLowerCase() === "active";
+            (row.effective_subscription_status || row.subscription_status || "").toLowerCase() === "active";
 
-          const statusText = row.subscription_status
-            ? row.subscription_status.charAt(0).toUpperCase() +
-              row.subscription_status.slice(1).toLowerCase()
+          const resolvedStatus = row.effective_subscription_status || row.subscription_status;
+          const statusText = resolvedStatus
+            ? resolvedStatus.charAt(0).toUpperCase() +
+              resolvedStatus.slice(1).toLowerCase()
             : isActive
             ? "Active"
             : "Inactive";

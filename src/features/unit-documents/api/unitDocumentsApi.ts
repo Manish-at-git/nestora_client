@@ -42,6 +42,19 @@ export const unitDocumentsApi = baseApi.injectEndpoints({
       transformResponse: (response: any) => response?.data || [],
     }),
 
+    getBoardVisibleUnitDocuments: builder.query<
+      UnitDocumentRecord[],
+      { associationId?: string } | void
+    >({
+      query: (params) => ({
+        url: "/board-visible-unit-documents",
+        method: "GET",
+        params: params?.associationId ? { assoc_id: params.associationId } : undefined,
+      }),
+      transformResponse: (response: any) => response?.data || [],
+      providesTags: [{ type: "UnitDocuments", id: "BOARD_VISIBLE" }],
+    }),
+
     createUnitDocument: builder.mutation<
       { ok: boolean },
       CreateUnitDocumentPayload
@@ -51,7 +64,7 @@ export const unitDocumentsApi = baseApi.injectEndpoints({
         method: "POST",
         data,
       }),
-      invalidatesTags: [{ type: "UnitDocuments", id: "LIST" }],
+      invalidatesTags: [{ type: "UnitDocuments", id: "LIST" }, { type: "UnitDocuments", id: "BOARD_VISIBLE" }],
     }),
 
     updateUnitDocument: builder.mutation<
@@ -66,6 +79,7 @@ export const unitDocumentsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: "UnitDocuments", id },
         { type: "UnitDocuments", id: "LIST" },
+        { type: "UnitDocuments", id: "BOARD_VISIBLE" },
       ],
     }),
 
@@ -74,7 +88,7 @@ export const unitDocumentsApi = baseApi.injectEndpoints({
         url: `/unit-documents/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [{ type: "UnitDocuments", id: "LIST" }],
+      invalidatesTags: [{ type: "UnitDocuments", id: "LIST" }, { type: "UnitDocuments", id: "BOARD_VISIBLE" }],
     }),
   }),
 });
@@ -82,6 +96,7 @@ export const unitDocumentsApi = baseApi.injectEndpoints({
 export const {
   useGetUnitDocumentsQuery,
   useGetUnitDocumentUnitsQuery,
+  useGetBoardVisibleUnitDocumentsQuery,
   useCreateUnitDocumentMutation,
   useUpdateUnitDocumentMutation,
   useDeleteUnitDocumentMutation,

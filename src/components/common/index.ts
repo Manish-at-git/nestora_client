@@ -21,6 +21,7 @@ export * from "./ServiceRequestFormModal";
 export * from "./StatusBadge";
 export * from "./StatusPill";
 export * from "./UpgradePlanModal";
+export * from "./PlanExpiredModal";
 export * from "./AccessRestricted";
 export * from "./TableRowActions";
 export { MonthPicker } from "@/components/ui/month-picker";

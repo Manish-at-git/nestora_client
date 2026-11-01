@@ -24,6 +24,7 @@ export const unitDocumentSchema = z.object({
   file_url: z.string().trim().min(1, "Please upload a document"),
   file_type: z.string().optional(),
   file_size_kb: z.number().nullable().optional(),
+  is_visible_to_board: z.boolean().default(false),
 });
 
 export type UnitDocumentFormValues = z.infer<typeof unitDocumentSchema>;

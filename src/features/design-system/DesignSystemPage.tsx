@@ -1505,6 +1505,41 @@ export const DesignSystemPage: React.FC = () => {
           {/* TAB 5: FEEDBACK & STATES */}
           <TabsContent value="feedback">
             <MotionPage className="space-y-6">
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+                <div className="mb-5">
+                  <h3 className="text-base font-bold text-slate-800">Branded loading states</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    The shared loader uses the Nestora icon for fetching and page-transition states. Choose a motion style with the <code className="font-mono text-slate-700">variant</code> prop.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {[
+                    {
+                      variant: "orbit" as const,
+                      title: "Orbit",
+                      description: "Default for pages and panels",
+                    },
+                    {
+                      variant: "pulse" as const,
+                      title: "Pulse",
+                      description: "Quiet, focused waiting state",
+                    },
+                    {
+                      variant: "dots" as const,
+                      title: "Dots",
+                      description: "Good for ongoing list refreshes",
+                    },
+                  ].map(({ variant, title, description }) => (
+                    <div key={variant} className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-center">
+                      <LoadingSpinner variant={variant} size="lg" text="Loading" className="p-2" />
+                      <p className="mt-3 text-xs font-bold text-slate-800">{title}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">{description}</p>
+                      <code className="mt-3 rounded bg-white px-2 py-1 text-[10px] text-slate-600 shadow-sm">variant=&quot;{variant}&quot;</code>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               <EmptyState
                 title="No Pending Service Requests"
                 description="All maintenance tickets have been addressed. Good job!"

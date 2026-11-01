@@ -21,6 +21,7 @@ export interface UnitDocumentTableProps {
   onView?: (document: UnitDocumentRecord) => void;
   onEdit?: (document: UnitDocumentRecord) => void;
   onDeleted?: () => void;
+  readOnly?: boolean;
 }
 
 export const UnitDocumentTable: React.FC<UnitDocumentTableProps> = ({
@@ -31,6 +32,7 @@ export const UnitDocumentTable: React.FC<UnitDocumentTableProps> = ({
   onView,
   onEdit,
   onDeleted,
+  readOnly = false,
 }) => {
   const { canCreate, canUpdate, canDelete } = usePermission();
   const [documentToDelete, setDocumentToDelete] =
@@ -47,10 +49,10 @@ export const UnitDocumentTable: React.FC<UnitDocumentTableProps> = ({
   const rowActionSlots = useMemo(
     () => ({
       reserveViewSlot: Boolean(onView),
-      reserveEditSlot: canUpdate ? Boolean(onEdit) : false,
-      reserveDeleteSlot: canDelete,
+      reserveEditSlot: !readOnly && canUpdate ? Boolean(onEdit) : false,
+      reserveDeleteSlot: !readOnly && canDelete,
     }),
-    [canDelete, canUpdate, onEdit, onView],
+    [canDelete, canUpdate, onEdit, onView, readOnly],
   );
 
   const confirmDelete = async () => {
@@ -158,27 +160,29 @@ export const UnitDocumentTable: React.FC<UnitDocumentTableProps> = ({
       ),
     });
 
-    columnsList.push({
-      key: "actions",
-      header: "Actions",
-      sortable: false,
-      width: "96px",
-      className: "text-center",
-      headerClassName: "text-center justify-center",
-      render: (row) => (
-        <TableRowActions
-          onView={onView ? () => onView(row) : undefined}
-          onEdit={onEdit ? () => onEdit(row) : undefined}
-          onDelete={() => setDocumentToDelete(row)}
-          canEdit={canUpdate}
-          canDelete={canDelete}
-          {...rowActionSlots}
-          viewTooltip="View unit document"
-          editTooltip="Edit unit document"
-          deleteTooltip="Delete unit document"
-        />
-      ),
-    });
+    if (!readOnly || onView) {
+      columnsList.push({
+        key: "actions",
+        header: "Actions",
+        sortable: false,
+        width: "96px",
+        className: "text-center",
+        headerClassName: "text-center justify-center",
+        render: (row) => (
+          <TableRowActions
+            onView={onView ? () => onView(row) : undefined}
+            onEdit={onEdit ? () => onEdit(row) : undefined}
+            onDelete={readOnly ? undefined : () => setDocumentToDelete(row)}
+            canEdit={!readOnly && canUpdate}
+            canDelete={!readOnly && canDelete}
+            {...rowActionSlots}
+            viewTooltip="View unit document"
+            editTooltip="Edit unit document"
+            deleteTooltip="Delete unit document"
+          />
+        ),
+      });
+    }
 
     return columnsList;
   }, [
@@ -189,6 +193,7 @@ export const UnitDocumentTable: React.FC<UnitDocumentTableProps> = ({
     onEdit,
     onView,
     rowActionSlots,
+    readOnly,
   ]);
 
   const uploadActionLabel = canCreate

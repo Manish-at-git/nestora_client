@@ -19,11 +19,32 @@ export const getCurrencySymbol = (country?: string | null): string => {
 };
 
 export const COUNTRIES = [
-  { name: 'India', flag: '🇮🇳' },
-  { name: 'United States', flag: '🇺🇸' },
-  { name: 'United Kingdom', flag: '🇬🇧' },
-  { name: 'Canada', flag: '🇨🇦' },
-  { name: 'Australia', flag: '🇦🇺' },
-  { name: 'Singapore', flag: '🇸🇬' },
-  { name: 'United Arab Emirates', flag: '🇦🇪' }
+  { name: 'India', code: 'IN', flag: '🇮🇳' },
+  { name: 'United States', code: 'US', flag: '🇺🇸' },
+  { name: 'United Kingdom', code: 'GB', flag: '🇬🇧' },
+  { name: 'Canada', code: 'CA', flag: '🇨🇦' },
+  { name: 'Australia', code: 'AU', flag: '🇦🇺' },
+  { name: 'Singapore', code: 'SG', flag: '🇸🇬' },
+  { name: 'United Arab Emirates', code: 'AE', flag: '🇦🇪' }
 ];
+
+/** Convert legacy plan country codes and uppercase names to Select option values. */
+export const normalizeCountryName = (country?: string | null): string => {
+  const normalized = country?.trim().toLowerCase();
+  if (!normalized) return '';
+  const aliases: Record<string, string> = {
+    ind: 'in',
+    india: 'in',
+    usa: 'us',
+    'united states': 'us',
+    uk: 'gb',
+    'united kingdom': 'gb',
+    canada: 'ca',
+    australia: 'au',
+    singapore: 'sg',
+    uae: 'ae',
+    'united arab emirates': 'ae',
+  };
+  const code = aliases[normalized] || normalized;
+  return COUNTRIES.find((item) => item.code.toLowerCase() === code)?.name || '';
+};

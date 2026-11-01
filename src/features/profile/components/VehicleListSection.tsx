@@ -59,6 +59,7 @@ export const VehicleListSection: React.FC<VehicleListSectionProps> = ({
           title="No vehicles registered"
           description="Register your personal or household vehicles to receive association parking permits and gate passes."
           className="py-10"
+          showIcon={false}
         />
       ) : (
         <div className="space-y-3.5">

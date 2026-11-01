@@ -36,6 +36,7 @@ export const ProfileDetailsCard: React.FC<ProfileDetailsCardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>("primary");
   const isSuper = isSuperAdmin(roleCode);
+  const isTenant = roleCode?.trim().toLowerCase() === "tenant";
 
   const currentMember =
     activeTab === "primary"
@@ -120,8 +121,10 @@ export const ProfileDetailsCard: React.FC<ProfileDetailsCardProps> = ({
   ];
 
   const tabs = [
-    { value: "primary", label: isEmployee ? role : "Homeowner", key: 1 },
-    ...unitHomeowners.map((ho) => ({ value: ho.user_id.toString(), label: ho.name, key: ho.user_id })),
+    { value: "primary", label: isEmployee ? role : isTenant ? "Tenant" : "Homeowner", key: 1 },
+    ...(isTenant
+      ? []
+      : unitHomeowners.map((ho) => ({ value: ho.user_id.toString(), label: ho.name, key: ho.user_id }))),
     ...familyMembers.map((member) => ({ value: member.id.toString(), label: member.name, key: member.id })),
   ];
 

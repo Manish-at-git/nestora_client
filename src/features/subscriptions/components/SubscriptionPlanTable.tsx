@@ -100,11 +100,15 @@ export const SubscriptionPlanTable: React.FC<SubscriptionPlanTableProps> = ({
         width: "140px",
         render: (row) => {
           const countryInfo = COUNTRIES.find(
-            (c) => c.name.toLowerCase() === (row.country || "").toLowerCase()
+            (c) =>
+              c.name.toLowerCase() === (row.country || "").toLowerCase() ||
+              c.code.toLowerCase() === (row.country || "").toLowerCase()
           );
           return (
             <StatusPill variant="neutral" shape="rounded" size="xs">
-              <span>{row.country || "Global"}</span>
+              <span>
+                {countryInfo ? `${countryInfo.flag} ${countryInfo.name}` : row.country || "Global"}
+              </span>
             </StatusPill>
           );
         },

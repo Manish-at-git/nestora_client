@@ -27,6 +27,21 @@ interface SessionAccount {
   role_code: string;
   association_id?: string | null;
   association_name?: string | null;
+  allowed_features?: string[];
+  subscription_status?: Account["subscription_status"];
+  trial_days?: number;
+  trial_days_left?: number;
+  trial_display?: string;
+  is_trial_expired?: boolean;
+  subscription_days_left?: number | null;
+  subscription_expiry_display?: string;
+  is_subscription_expired?: boolean;
+  assessment_amount?: number | string;
+  assessment_total_due?: number | string;
+  assessment_frequency?: string | null;
+  assessment_due_day?: number | null;
+  assessment_rate_type?: string | null;
+  assessment_paid_this_month?: boolean;
   role_permissions: RolePermission[];
 }
 
@@ -56,6 +71,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role_code: account.role_code,
     association_id: account.association_id || undefined,
     association_name: account.association_name || undefined,
+    allowed_features: account.allowed_features || [],
+    subscription_status: account.subscription_status,
+    trial_days: account.trial_days,
+    trial_days_left: account.trial_days_left,
+    trial_display: account.trial_display,
+    is_trial_expired: account.is_trial_expired,
+    subscription_days_left: account.subscription_days_left,
+    subscription_expiry_display: account.subscription_expiry_display,
+    is_subscription_expired: account.is_subscription_expired,
+    assessment_amount: account.assessment_amount,
+    assessment_total_due: account.assessment_total_due,
+    assessment_frequency: account.assessment_frequency || undefined,
+    assessment_due_day: account.assessment_due_day || undefined,
+    assessment_rate_type: account.assessment_rate_type || undefined,
+    assessment_paid_this_month: account.assessment_paid_this_month,
     role_permissions: account.role_permissions,
   });
 
