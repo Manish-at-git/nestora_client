@@ -11,9 +11,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatApiErrorDetail } from "@/services/api/apiClient";
 import {
   useCreateDelinquencyReportMutation,
+  useGetDelinquencyMembersQuery,
   useUpdateDelinquencyReportMutation,
 } from "../api";
 import type {
+  DelinquencyMemberOption,
   DelinquencyReport,
   DelinquencyReportPayload,
   DelinquencyRowInput,
@@ -30,7 +32,16 @@ interface Props {
 
 interface EditorRow extends DelinquencyRowInput {
   key: string;
+  member_id: string;
 }
+
+const CHARGE_CATEGORY_OPTIONS = [
+  "Maintenance",
+  "Late Fee",
+  "Special Assessment",
+  "Utilities",
+  "Other",
+];
 
 const money = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -65,6 +76,7 @@ const parsePeriodDate = (value?: string) => {
 
 const emptyRow = (): EditorRow => ({
   key: crypto.randomUUID(),
+  member_id: "",
   member_name: "",
   unit_number: "",
   block: "",
@@ -91,6 +103,10 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
   const [error, setError] = useState("");
   const [createReport, createState] = useCreateDelinquencyReportMutation();
   const [updateReport, updateState] = useUpdateDelinquencyReportMutation();
+  const { data: members = [], isFetching: isLoadingMembers } = useGetDelinquencyMembersQuery(
+    associationId,
+    { skip: !isOpen || !associationId },
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -103,6 +119,7 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
       setRows(
         report.rows.map((row) => ({
           key: row.id,
+          member_id: "",
           member_name: row.member_name,
           unit_number: row.unit_number,
           block: row.block || "",
@@ -124,6 +141,25 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
     setActiveTab("members");
   }, [isOpen, report]);
 
+  useEffect(() => {
+    if (!members.length) return;
+    setRows((current) => {
+      let changed = false;
+      const next = current.map((row) => {
+        if (row.member_id) return row;
+        const member = members.find((item) =>
+          item.name === row.member_name
+          && item.unit_number === row.unit_number
+          && (item.block || "") === (row.block || ""),
+        );
+        if (!member) return row;
+        changed = true;
+        return { ...row, member_id: member.user_id };
+      });
+      return changed ? next : current;
+    });
+  }, [members]);
+
   const totalOutstanding = useMemo(
     () => rows.reduce((sum, row) => sum + (Number(row.outstanding_amount) || 0), 0),
     [rows],
@@ -143,14 +179,6 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
     const collected = Number(collectedAmount) || 0;
     return billed ? Math.round((collected / billed) * 100) : 0;
   }, [billedAmount, collectedAmount]);
-  const blockOptions = useMemo(
-    () => Array.from(new Set(rows.map((row) => row.block?.trim()).filter(Boolean))) as string[],
-    [rows],
-  );
-  const categoryOptions = useMemo(
-    () => Array.from(new Set(rows.map((row) => row.charge_category.trim()).filter(Boolean))),
-    [rows],
-  );
   const chargeDistribution = useMemo(() => {
     const grouped = new Map<string, { amount: number; count: number }>();
     rows.forEach((row) => {
@@ -211,6 +239,41 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
     );
   };
 
+  const blockOptions = useMemo(
+    () => Array.from(new Set(members.map((member) => member.block).filter((block): block is string => Boolean(block)))).sort(),
+    [members],
+  );
+
+  const unitOptions = (block: string) => Array.from(new Set(
+    members.filter((member) => member.block === block).map((member) => member.unit_number).filter((unit): unit is string => Boolean(unit)),
+  )).sort();
+
+  const selectBlock = (key: string, block: string) => {
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row, block, unit_number: "", member_id: "", member_name: "",
+    } : row));
+  };
+
+  const selectUnit = (key: string, unitNumber: string) => {
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row, unit_number: unitNumber, member_id: "", member_name: "",
+    } : row));
+  };
+
+  const selectMember = (key: string, memberId: string) => {
+    const member = members.find((item) => item.user_id === memberId);
+    if (!member) return;
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row,
+      member_id: member.user_id,
+      member_name: member.name,
+    } : row));
+  };
+
+  const memberLabel = (member: DelinquencyMemberOption) => {
+    return member.name;
+  };
+
   const validate = () => {
     const billed = Number(billedAmount);
     const collected = Number(collectedAmount);
@@ -224,7 +287,7 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
     if (!rows.length) return "Add at least one delinquency row.";
     for (const [index, row] of rows.entries()) {
       const amount = Number(row.outstanding_amount);
-      if (!row.member_name.trim() || !row.unit_number.trim() || !row.charge_category.trim()) {
+      if (!row.member_id || !row.member_name.trim() || !row.unit_number.trim() || !row.charge_category.trim()) {
         return `Complete all required fields in row ${index + 1}.`;
       }
       if (!Number.isFinite(amount) || amount < 0 || row.days_overdue < 0) {
@@ -245,7 +308,7 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
       fiscal_period: period,
       total_billed_amount: billedAmount,
       total_collected_amount: collectedAmount,
-      rows: rows.map(({ key: _key, ...row }) => ({
+      rows: rows.map(({ key: _key, member_id: _memberId, ...row }) => ({
         ...row,
         member_name: row.member_name.trim(),
         unit_number: row.unit_number.trim(),
@@ -281,6 +344,7 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
       title={report ? "Update Delinquency Report" : "Create Delinquency Report"}
       description="Record delinquent balances for one association and fiscal period"
       size="full"
+      className="sm:max-w-7xl"
       isSubmitting={createState.isLoading || updateState.isLoading}
       submitText="Save Delinquency Report"
       loadingText="Saving..."
@@ -384,7 +448,7 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-slate-800">Delinquent member rows</h3>
-              <p className="text-xs text-slate-500">Totals, risk status, charts, and insights are calculated by the server.</p>
+              <p className="text-xs text-slate-500">Choose Block, then Unit, then a member. Totals and risk status are calculated by the server.</p>
             </div>
             <Button
               type="button"
@@ -398,41 +462,15 @@ export const DelinquencyReportEditorModal: React.FC<Props> = ({
           </div>
           <div className="overflow-hidden">
             <div className="space-y-2">
-              <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,.9fr)_minmax(0,.8fr)_minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,.9fr)_minmax(0,1.3fr)_28px] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                <span>Member</span><span>Unit</span><span>Block</span><span>Charge category</span><span className="text-right">Outstanding</span><span>Days overdue</span><span>Last payment</span><span />
+              <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,.8fr)_minmax(0,1.9fr)_minmax(0,1.2fr)_minmax(0,.75fr)_minmax(0,.65fr)_minmax(0,1.2fr)_28px] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                <span>Block</span><span>Unit</span><span>Member</span><span>Charge category</span><span className="text-right">Outstanding</span><span>Days overdue</span><span>Last payment</span><span />
               </div>
               {rows.map((row) => (
-                <div key={row.key} className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,.9fr)_minmax(0,.8fr)_minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,.9fr)_minmax(0,1.3fr)_28px] items-center gap-2 [&>*]:min-w-0">
-                  <Input value={row.member_name} onChange={(event) => updateText(row.key, "member_name", event.target.value)} className="h-9 min-w-0 text-sm" placeholder="Member name" />
-                  <Input value={row.unit_number} onChange={(event) => updateText(row.key, "unit_number", event.target.value)} className="h-9 min-w-0 text-sm" placeholder="Unit" />
-                  {blockOptions.length ? (
-                    <Select
-                      value={row.block || ""}
-                      onValueChange={(value) => updateText(row.key, "block", value)}
-                      options={[
-                        { value: "", label: "No block" },
-                        ...blockOptions.map((block) => ({ value: block, label: block })),
-                      ]}
-                      size="sm"
-                      className="h-9 w-full min-w-0 text-xs"
-                    />
-                  ) : (
-                    <Input value={row.block || ""} onChange={(event) => updateText(row.key, "block", event.target.value)} className="h-9 min-w-0 text-sm" placeholder="Block" />
-                  )}
-                  {categoryOptions.length ? (
-                    <Select
-                      value={row.charge_category}
-                      onValueChange={(value) => updateText(row.key, "charge_category", value)}
-                      options={[
-                        { value: "", label: "Select category" },
-                        ...categoryOptions.map((category) => ({ value: category, label: category })),
-                      ]}
-                      size="sm"
-                      className="h-9 w-full min-w-0 text-xs"
-                    />
-                  ) : (
-                    <Input value={row.charge_category} onChange={(event) => updateText(row.key, "charge_category", event.target.value)} className="h-9 min-w-0 text-sm" placeholder="Category" />
-                  )}
+                <div key={row.key} className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,.8fr)_minmax(0,1.9fr)_minmax(0,1.2fr)_minmax(0,.75fr)_minmax(0,.65fr)_minmax(0,1.2fr)_28px] items-center gap-2 [&>*]:min-w-0">
+                  <Select placeholder="block" value={row.block || ""} onValueChange={(value) => selectBlock(row.key, value)} options={[{ value: "", label: isLoadingMembers ? "Loading blocks..." : "Select block" }, ...blockOptions.map((block) => ({ value: block, label: block }))]} size="sm" className="h-9 w-full min-w-0 text-xs" disabled={isLoadingMembers} />
+                  <Select placeholder="unit" value={row.unit_number} onValueChange={(value) => selectUnit(row.key, value)} options={[{ value: "", label: row.block ? "Select unit" : "Select block first" }, ...unitOptions(row.block || "").map((unit) => ({ value: unit, label: unit }))]} size="sm" className="h-9 w-full min-w-0 text-xs" disabled={!row.block} />
+                  <Select placeholder="member" value={row.member_id} onValueChange={(value) => selectMember(row.key, value)} options={[{ value: "", label: row.unit_number ? "Select member" : "Select unit first" }, ...members.filter((member) => member.block === row.block && member.unit_number === row.unit_number).map((member) => ({ value: member.user_id, label: memberLabel(member) }))]} size="sm" className="h-9 w-full min-w-0 text-xs" disabled={!row.unit_number} />
+                  <Select placeholder="charge" value={row.charge_category} onValueChange={(value) => updateText(row.key, "charge_category", value)} options={[{ value: "", label: "Select category" }, ...CHARGE_CATEGORY_OPTIONS.map((category) => ({ value: category, label: category }))]} size="sm" className="h-9 w-full min-w-0 text-xs" />
                   <Input type="number" min="0" step="0.01" value={row.outstanding_amount} onChange={(event) => updateText(row.key, "outstanding_amount", event.target.value)} className="h-9 min-w-0 text-right font-mono text-sm" />
                   <Input type="number" min="0" step="1" value={row.days_overdue} onChange={(event) => setRows((current) => current.map((item) => item.key === row.key ? { ...item, days_overdue: Number(event.target.value) } : item))} className="h-9 min-w-0 text-center text-sm" />
                   <DatePicker value={row.last_payment_date || ""} onChange={(value) => setRows((current) => current.map((item) => item.key === row.key ? { ...item, last_payment_date: value || null } : item))} displayFormat="MMM d, yyyy" size="sm" triggerClassName="h-9 w-full text-xs" />

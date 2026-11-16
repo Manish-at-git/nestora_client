@@ -26,6 +26,7 @@ export const PrepaidReportImportModal: React.FC<Props> = ({
       reportName="Prepaid Report"
       initialPeriod={initialPeriod}
       templateEndpoint="/prepaid-reports/template"
+      templateParams={{ association_id: associationId }}
       templateFilename="prepaid_report_import_template.xlsx"
       columnsDescription="Member, unit, block, category, prepaid amount, used amount, and expiry date."
       isSubmitting={importState.isLoading}

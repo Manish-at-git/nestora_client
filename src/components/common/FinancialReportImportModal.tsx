@@ -18,6 +18,7 @@ interface FinancialReportImportModalProps {
   reportName: string;
   initialPeriod: string;
   templateEndpoint: string;
+  templateParams?: Record<string, string>;
   templateFilename: string;
   columnsDescription: string;
   isSubmitting: boolean;
@@ -58,6 +59,7 @@ export const FinancialReportImportModal: React.FC<
   reportName,
   initialPeriod,
   templateEndpoint,
+  templateParams,
   templateFilename,
   columnsDescription,
   isSubmitting,
@@ -89,6 +91,7 @@ export const FinancialReportImportModal: React.FC<
     try {
       setIsDownloading(true);
       const response = await apiClient.get(templateEndpoint, {
+        params: templateParams,
         responseType: "blob",
       });
       const url = URL.createObjectURL(response.data);

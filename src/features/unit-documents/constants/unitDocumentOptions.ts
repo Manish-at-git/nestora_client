@@ -7,7 +7,8 @@ export const UNIT_DOCUMENT_TYPES: UnitDocumentOption[] = [
   { id: 1, label: "Unit Plan" },
   { id: 2, label: "Insurance" },
   { id: 3, label: "Property Document" },
-  { id: 4, label: "Other" },
+  { id: 4, label: "Rent Agreement" },
+  { id: 5, label: "Other" },
 ];
 
 export const getUnitDocumentTypeId = (

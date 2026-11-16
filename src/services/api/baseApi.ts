@@ -47,6 +47,7 @@ export const baseApi = createApi({
     "Auth",
     "Announcements",
     "ServiceRequests",
+    "Violations",
     "Associations",
     "Visitors",
     "Deliveries",

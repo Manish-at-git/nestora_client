@@ -1,6 +1,7 @@
 import baseApi from "@/services/api/baseApi";
 import { unwrapApiData } from "@/services/api/response";
 import type {
+  DelinquencyMemberOption,
   DelinquencyMutationResult,
   DelinquencyReport,
   DelinquencyReportPayload,
@@ -41,6 +42,14 @@ export const delinquencyReportsApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, { associationId }) => [
         { type: "DelinquencyReports", id: associationId },
       ],
+    }),
+    getDelinquencyMembers: builder.query<DelinquencyMemberOption[], string>({
+      query: (associationId) => ({
+        url: "/delinquency-reports/members",
+        params: { association_id: associationId },
+      }),
+      transformResponse: (response: unknown) =>
+        unwrapApiData<DelinquencyMemberOption[]>(response),
     }),
     createDelinquencyReport: builder.mutation<
       DelinquencyMutationResult,
@@ -97,6 +106,7 @@ export const delinquencyReportsApi = baseApi.injectEndpoints({
 export const {
   useGetDelinquencyPeriodsQuery,
   useGetDelinquencyReportQuery,
+  useGetDelinquencyMembersQuery,
   useCreateDelinquencyReportMutation,
   useUpdateDelinquencyReportMutation,
   useImportDelinquencyReportMutation,

@@ -34,6 +34,7 @@ export const Icons = {
   User: LucideIcons.User,
   UserCheck: LucideIcons.UserCheck,
   UserPlus: LucideIcons.UserPlus,
+  IdCard: LucideIcons.IdCard,
   Election: LucideIcons.CheckSquare,
   CheckSquare: LucideIcons.CheckSquare,
   Socials: LucideIcons.Megaphone,

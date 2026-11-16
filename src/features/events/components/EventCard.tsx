@@ -8,6 +8,7 @@ import { EventPassActions } from "./EventPassActions";
 import { useToggleLikeEventMutation } from "../api/eventsApi";
 import type { EventItem } from "../types";
 import { cn } from "@/lib/utils";
+import { isEventCompleted } from "../utils/eventStatus";
 
 export interface EventCardProps {
   event: EventItem;
@@ -33,6 +34,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   const [toggleLike, { isLoading: isLiking }] = useToggleLikeEventMutation();
   const startDate = event.starts_at ? new Date(event.starts_at) : null;
   const isPaid = Boolean(event.is_paid && (event.fee_amount || 0) > 0);
+  const isCompleted = isEventCompleted(event);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,6 +68,11 @@ export const EventCard: React.FC<EventCardProps> = ({
               </span>
             )}
             <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              {isCompleted && (
+                <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white shadow-xs">
+                  Completed
+                </span>
+              )}
               {event.has_pass && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white shadow-xs">
                   <QrCode size={11} /> QR Pass
@@ -95,6 +102,11 @@ export const EventCard: React.FC<EventCardProps> = ({
               </span>
             )}
             <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              {isCompleted && (
+                <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white shadow-xs">
+                  Completed
+                </span>
+              )}
               {event.has_pass && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white shadow-xs">
                   <QrCode size={11} /> QR Pass

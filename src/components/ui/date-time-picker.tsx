@@ -143,6 +143,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
     return null;
   };
 
+  const resolveBoundary = (value?: string | Date) =>
+    value === "now" ? new Date() : parseSafeDate(value);
+
   const [internalDate, setInternalDate] = useState<Date | null>(() => {
     return parseSafeDate(controlledValue ?? defaultValue);
   });
@@ -164,7 +167,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
       if (internalDate) {
         setViewDate(internalDate);
       } else if (minDateTime) {
-        const minD = parseSafeDate(minDateTime);
+        const minD = resolveBoundary(minDateTime);
         if (minD && isValid(minD)) {
           setViewDate(minD);
         }
@@ -198,6 +201,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
 
   // Selection handlers
   const updateDateTime = (newDate: Date | null) => {
+    if (newDate && isDateTimeOutsideBounds(newDate)) return;
     setInternalDate(newDate);
     if (newDate && isValid(newDate)) {
       const outStr = formatOutputValue(newDate);
@@ -254,12 +258,29 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const startingDayIndex = getDay(monthStart); // 0 (Sun) to 6 (Sat)
 
   const isDayDisabled = (day: Date) => {
-    const minDate = parseSafeDate(minDateTime);
+    const minDate = resolveBoundary(minDateTime);
     if (minDate && isBefore(day, startOfDay(minDate))) return true;
-    const maxDate = parseSafeDate(maxDateTime);
+    const maxDate = resolveBoundary(maxDateTime);
     if (maxDate && isAfter(day, endOfDay(maxDate))) return true;
     return false;
   };
+
+  const isDateTimeOutsideBounds = (date: Date) => {
+    const minDate = resolveBoundary(minDateTime);
+    const maxDate = resolveBoundary(maxDateTime);
+    return Boolean(
+      (minDate && isBefore(date, minDate)) ||
+      (maxDate && isAfter(date, maxDate)),
+    );
+  };
+
+  const isTimeDisabled = (hour24: number, minute: number) => {
+    const base = selectedDate || new Date();
+    return isDateTimeOutsideBounds(setMinutes(setHours(base, hour24), minute));
+  };
+
+  const getHour24 = (hour12: number, period: "AM" | "PM") =>
+    period === "PM" ? (hour12 === 12 ? 12 : hour12 + 12) : hour12 === 12 ? 0 : hour12;
 
   // Month & Year view items
   const months = useMemo(
@@ -547,6 +568,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                       options={Array.from({ length: 12 }, (_, i) => i + 1).map((h) => ({
                         value: String(h),
                         label: String(h).padStart(2, "0"),
+                        disabled: isTimeDisabled(getHour24(h, currentPeriod), currentMinute),
                       }))}
                       className="h-8 px-2 text-xs font-semibold rounded-lg"
                       contentClassName="min-w-[68px] z-[60]"
@@ -572,6 +594,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                       options={minuteOptions.map((m) => ({
                         value: String(m),
                         label: String(m).padStart(2, "0"),
+                        disabled: isTimeDisabled(currentHour24, m),
                       }))}
                       className="h-8 px-2 text-xs font-semibold rounded-lg"
                       contentClassName="min-w-[68px] z-[60]"
@@ -586,24 +609,28 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                     <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-xs font-bold h-8 items-center">
                       <button
                         type="button"
+                        disabled={isTimeDisabled(getHour24(currentHour12, "AM"), currentMinute)}
                         onClick={() => handleTimeChange(currentHour12, currentMinute, "AM")}
                         className={cn(
                           "flex-1 h-7 rounded-md transition-colors cursor-pointer flex items-center justify-center",
                           currentPeriod === "AM"
                             ? "bg-white text-slate-900 shadow-2xs font-bold"
-                            : "text-slate-500 hover:text-slate-800"
+                            : "text-slate-500 hover:text-slate-800",
+                          "disabled:cursor-not-allowed disabled:opacity-40"
                         )}
                       >
                         AM
                       </button>
                       <button
                         type="button"
+                        disabled={isTimeDisabled(getHour24(currentHour12, "PM"), currentMinute)}
                         onClick={() => handleTimeChange(currentHour12, currentMinute, "PM")}
                         className={cn(
                           "flex-1 h-7 rounded-md transition-colors cursor-pointer flex items-center justify-center",
                           currentPeriod === "PM"
                             ? "bg-white text-slate-900 shadow-2xs font-bold"
-                            : "text-slate-500 hover:text-slate-800"
+                            : "text-slate-500 hover:text-slate-800",
+                          "disabled:cursor-not-allowed disabled:opacity-40"
                         )}
                       >
                         PM
@@ -627,6 +654,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                       options={Array.from({ length: 24 }, (_, i) => i).map((h) => ({
                         value: String(h),
                         label: String(h).padStart(2, "0"),
+                        disabled: isTimeDisabled(h, currentMinute),
                       }))}
                       className="h-8 px-2 text-xs font-semibold rounded-lg"
                       contentClassName="min-w-[68px] z-[60]"
@@ -646,6 +674,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                       options={minuteOptions.map((m) => ({
                         value: String(m),
                         label: String(m).padStart(2, "0"),
+                        disabled: isTimeDisabled(currentHour24, m),
                       }))}
                       className="h-8 px-2 text-xs font-semibold rounded-lg"
                       contentClassName="min-w-[68px] z-[60]"
@@ -664,8 +693,13 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                     <button
                       key={pst}
                       type="button"
+                      disabled={(() => {
+                        const [time, period] = pst.split(" ");
+                        const [hour, minute] = time.split(":").map(Number);
+                        return isTimeDisabled(getHour24(hour, period as "AM" | "PM"), minute);
+                      })()}
                       onClick={() => handlePresetSelect(pst)}
-                      className="text-left px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors truncate"
+                      className="text-left px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors truncate disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     >
                       {pst}
                     </button>

@@ -10,6 +10,14 @@ export interface DelinquencyRowInput {
   last_payment_date?: string | null;
 }
 
+export interface DelinquencyMemberOption {
+  user_id: string;
+  name: string;
+  unit_number: string | null;
+  block: string | null;
+  roles: string[];
+}
+
 export interface DelinquencyRow extends DelinquencyRowInput {
   id: string;
   status: DelinquencyStatus;

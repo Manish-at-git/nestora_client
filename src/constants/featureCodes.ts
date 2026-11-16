@@ -70,6 +70,16 @@ export const FEATURES = {
     FEATURE_PATH: "/employees",
     FEATURE_LABEL: "Employees",
   },
+  STAFF: {
+    FEATURE_CODE: "staff",
+    FEATURE_PATH: "/staff",
+    FEATURE_LABEL: "Staff",
+  },
+  STAFF_ATTENDANCE_REPORT: {
+    FEATURE_CODE: "staff_attendance_report",
+    FEATURE_PATH: "/staff/attendance-report",
+    FEATURE_LABEL: "Staff Attendance Report",
+  },
   USERS: {
     FEATURE_CODE: "users",
     FEATURE_PATH: "/users",
@@ -84,6 +94,11 @@ export const FEATURES = {
     FEATURE_CODE: "service_request",
     FEATURE_PATH: "/service-requests",
     FEATURE_LABEL: "Service Request",
+  },
+  VIOLATIONS: {
+    FEATURE_CODE: "violations",
+    FEATURE_PATH: "/violations",
+    FEATURE_LABEL: "Violations",
   },
   BOARD_TASK: {
     FEATURE_CODE: "board_task",
@@ -248,7 +263,7 @@ export const FEATURES = {
   STAFF_ENTRY: {
     FEATURE_CODE: "staff_entry",
     FEATURE_PATH: "/staff",
-    FEATURE_LABEL: "Staff Entry",
+    FEATURE_LABEL: "Staff",
   },
   INCIDENTS: {
     FEATURE_CODE: "incidents",

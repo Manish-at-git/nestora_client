@@ -18,6 +18,7 @@ import {
   EventCard,
   MeetingCard,
   DuesWidgetCard,
+  calculateOutstandingDues,
   UpcomingMeetingCard,
   UpcomingEventCard,
   PayDuesModal,
@@ -26,6 +27,7 @@ import {
 } from "./components";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { ROLE_CODE } from "@/constants/roleCodes";
+import { useGetHomeownerActiveViolationFinesQuery } from "@/features/violations/api/violationsApi";
 
 export interface TimelineItem {
   id: string | number;
@@ -172,6 +174,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     roleCode === ROLE_CODE.SUPER_ADMIN;
 
   const currencySymbol = getCurrencySymbol(account?.association_country || profile?.country);
+  const isUnitResident = [
+    ROLE_CODE.HOMEOWNER,
+    ROLE_CODE.BOARD_MEMBER,
+    ROLE_CODE.COMMITTEE_MEMBER,
+  ].includes(roleCode as typeof ROLE_CODE.HOMEOWNER);
+  const { data: activeViolationFines = [] } = useGetHomeownerActiveViolationFinesQuery(undefined, {
+    skip: !isUnitResident,
+  });
+  const totalOutstandingDues = calculateOutstandingDues(account, activeViolationFines);
 
   const fetchTimeline = async (currentOffset: number = 0) => {
     try {
@@ -368,7 +379,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   const handlePayDues = async (pin: string) => {
     try {
-      await apiClient.post("/wallet/pay-dues", { pin });
+      await apiClient.post("/wallet/pay-dues", { pin, amount: totalOutstandingDues });
       toast.success("Dues payment successful!");
       setShowPayDues(false);
       window.location.reload();
@@ -589,6 +600,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             account={account}
             currencySymbol={currencySymbol}
             isTenant={isTenant}
+            activeViolationFines={activeViolationFines}
             onPayDuesClick={() => setShowPayDues(true)}
             getOrdinalSuffix={getOrdinalSuffix}
           />
@@ -613,7 +625,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         isOpen={showPayDues}
         onClose={() => setShowPayDues(false)}
         currencySymbol={currencySymbol}
-        totalDue={account?.assessment_total_due}
+        totalDue={totalOutstandingDues}
         onPay={handlePayDues}
       />
 

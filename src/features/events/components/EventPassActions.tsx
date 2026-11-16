@@ -5,6 +5,7 @@ import type { EventItem } from "../types";
 import { AdminEventPassesModal, EventPassScannerModal } from "./EventPassAdminModal";
 import { EventPassBookingModal } from "./EventPassBookingModal";
 import { EventPassModal } from "./EventPassModal";
+import { isEventCompleted } from "../utils/eventStatus";
 
 export function EventPassActions({ event, canManage = false }: { event: EventItem; canManage?: boolean }) {
   const [booking, setBooking] = useState(false);
@@ -15,6 +16,15 @@ export function EventPassActions({ event, canManage = false }: { event: EventIte
   const [scanning, setScanning] = useState(false);
 
   if (!event.has_pass) return null;
+  if (isEventCompleted(event)) {
+    return (
+      <div className="border-t border-slate-100 pt-3">
+        <p className="rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">
+          Event completed
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2.5 border-t border-slate-100 pt-3">

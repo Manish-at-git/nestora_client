@@ -185,7 +185,8 @@ export const Radio = React.memo(
       <label
         htmlFor={radioId}
         className={cn(
-          "inline-flex items-start gap-2.5 cursor-pointer transition-opacity",
+          "inline-flex gap-2.5 cursor-pointer transition-opacity",
+          description ? "items-start" : "items-center",
           disabled && "opacity-50 cursor-not-allowed",
           containerClassName
         )}
@@ -206,7 +207,8 @@ export const Radio = React.memo(
         {/* Radio Indicator */}
         <div
           className={cn(
-            "rounded-full border border-slate-300 bg-white flex items-center justify-center shrink-0 mt-0.5 transition-all shadow-2xs",
+            "rounded-full border border-slate-300 bg-white flex items-center justify-center shrink-0 transition-all shadow-2xs",
+            description && "mt-0.5",
             outerCircleSize,
             isChecked && activeColorClasses,
             "hover:border-slate-400",

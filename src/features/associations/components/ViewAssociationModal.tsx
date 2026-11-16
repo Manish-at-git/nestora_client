@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -9,6 +9,7 @@ import { StatusPill } from "@/components/common/StatusPill";
 import { useGetSubscriptionPlansQuery } from "@/features/subscriptions/api/subscriptionsApi";
 import {
   useGetAssociationStatsQuery,
+  useUploadAssociationContractMutation,
   useUpdateAssociationSubscriptionMutation,
 } from "../api/associationsApi";
 import { getCurrencySymbol, COUNTRIES } from "@/utils/currency";
@@ -22,6 +23,7 @@ import {
   Users,
   FileText,
   ExternalLink,
+  Upload,
   Building,
   Clock3,
 } from "lucide-react";
@@ -58,6 +60,9 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
   });
   const [updateSubscription, { isLoading: isUpdatingSub }] =
     useUpdateAssociationSubscriptionMutation();
+  const [uploadContract, { isLoading: isUploadingContract }] =
+    useUploadAssociationContractMutation();
+  const contractInputRef = useRef<HTMLInputElement>(null);
 
   const [subForm, setSubForm] = useState<AssociationSubscriptionPayload>({
     plan_id: "",
@@ -124,6 +129,25 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
     }
   };
 
+  const handleContractFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      await uploadContract({ id: activeAssociation.id, file }).unwrap();
+      toast.success("Association contract uploaded successfully.");
+      onSuccess?.();
+    } catch (err: any) {
+      toast.error(
+        formatApiErrorDetail(err?.data || err?.message || "Failed to upload contract.")
+      );
+    } finally {
+      event.target.value = "";
+    }
+  };
+
   const activePlans = plans.filter((p) => Boolean(p.is_active));
   const currencySymbol = getCurrencySymbol(activeAssociation.country);
 
@@ -166,6 +190,7 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
     : "Inactive";
 
   const isStatusActive = statusText.toLowerCase() === "active";
+  const contractUrl = stats?.contract_url || activeAssociation.contract_url;
 
   const descriptionParts = [
     activeAssociation.city,
@@ -255,27 +280,50 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
             </div>
 
             {/* Contract */}
-            <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3 shadow-2xs">
-              <div className="p-2.5 bg-white text-amber-600 rounded-xl shadow-2xs shrink-0 border border-amber-100/60">
-                <FileText className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-medium text-slate-500 truncate">Contract</p>
-                {stats?.contract_url || activeAssociation.contract_url ? (
-                  <a
-                    href={(stats?.contract_url || activeAssociation.contract_url) as string}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-bold text-indigo-600 hover:underline inline-flex items-center gap-1 truncate"
-                  >
-                    <span>View File</span>
+            {contractUrl ? (
+              <a
+                href={contractUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3 shadow-2xs transition-colors hover:bg-amber-50 hover:border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                title="Open or download contract"
+              >
+                <div className="p-2.5 bg-white text-amber-600 rounded-xl shadow-2xs shrink-0 border border-amber-100/60">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-slate-500 truncate">Contract</p>
+                  <span className="text-xs font-bold text-indigo-600 inline-flex items-center gap-1 truncate">
+                    <span>Open</span>
                     <ExternalLink size={11} className="shrink-0" />
-                  </a>
-                ) : (
-                  <p className="text-xs font-semibold text-slate-400">Not Uploaded</p>
-                )}
-              </div>
-            </div>
+                  </span>
+                </div>
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => contractInputRef.current?.click()}
+                disabled={isUploadingContract}
+                className="text-left bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 flex items-center gap-3 shadow-2xs transition-colors hover:bg-amber-50 hover:border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:cursor-wait disabled:opacity-70"
+              >
+                <div className="p-2.5 bg-white text-amber-600 rounded-xl shadow-2xs shrink-0 border border-amber-100/60">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-slate-500 truncate">Contract</p>
+                  <p className="text-xs font-bold text-indigo-600">
+                    {isUploadingContract ? "Uploading..." : "Upload contract"}
+                  </p>
+                </div>
+              </button>
+            )}
+            <input
+              ref={contractInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={handleContractFileChange}
+            />
           </div>
         )}
 
@@ -399,21 +447,6 @@ export const ViewAssociationModal: React.FC<ViewAssociationModalProps> = ({
                     placeholder="Select start date"
                     isClearable
                     onClear={() => setSubForm((prev) => ({ ...prev, subscription_start: "" }))}
-                  />
-                </FormField>
-              </div>
-
-              {/* Subscription End */}
-              <div>
-                <FormField label="End Date">
-                  <DatePicker
-                    value={subForm.subscription_end || ""}
-                    onChange={(e) =>
-                      setSubForm((prev) => ({ ...prev, subscription_end: e || "" }))
-                    }
-                    placeholder="Select end date"
-                    isClearable
-                    onClear={() => setSubForm((prev) => ({ ...prev, subscription_end: "" }))}
                   />
                 </FormField>
               </div>

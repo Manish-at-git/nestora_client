@@ -1,6 +1,33 @@
 import type { NavItem } from "@/types/navigation";
 import type { Account, RolePermission } from "@/types/auth";
+import { FEATURES } from "@/constants/featureCodes";
 import { ROLE_CODE } from "@/constants/roleCodes";
+
+/** Keep the staff directory and its attendance report adjacent in the sidebar. */
+const keepStaffNavigationTogether = (items: NavItem[]): NavItem[] => {
+  const staffIndex = items.findIndex(
+    (item) => item.key === FEATURES.STAFF.FEATURE_CODE,
+  );
+  const reportIndex = items.findIndex(
+    (item) => item.key === FEATURES.STAFF_ATTENDANCE_REPORT.FEATURE_CODE,
+  );
+
+  if (staffIndex < 0 || reportIndex < 0 || reportIndex === staffIndex + 1) {
+    return items;
+  }
+
+  const report = items[reportIndex];
+  const itemsWithoutReport = items.filter((_, index) => index !== reportIndex);
+  const staffIndexWithoutReport = itemsWithoutReport.findIndex(
+    (item) => item.key === FEATURES.STAFF.FEATURE_CODE,
+  );
+
+  return [
+    ...itemsWithoutReport.slice(0, staffIndexWithoutReport + 1),
+    report,
+    ...itemsWithoutReport.slice(staffIndexWithoutReport + 1),
+  ];
+};
 
 /**
  * Access Control Evaluator
@@ -211,7 +238,7 @@ export const buildDynamicNavItemsFromPermissions = (
     return orderDifference || a.label.localeCompare(b.label);
   });
 
-  return topLevel;
+  return keepStaffNavigationTogether(topLevel);
 };
 
 /**

@@ -21,6 +21,7 @@ import { WalletPage } from "@/features/wallet";
 import { UserProfilePage } from "@/features/profile";
 import { MeetingsPage } from "@/features/meetings";
 import { ServiceRequestsPage } from "@/features/service-requests";
+import { ViolationsPage } from "@/features/violations";
 import { BoardTasksPage } from "@/features/board-tasks";
 import { EntityTypesPage } from "@/features/entity-types";
 import { EntitiesPage } from "@/features/entities";
@@ -30,6 +31,7 @@ import { PermissionsPage } from "@/features/permissions";
 import { SubscriptionsPage } from "@/features/subscriptions";
 import { AssociationsPage } from "@/features/associations";
 import { EmployeesPage } from "@/features/employees";
+import { StaffAttendanceReportPage, StaffPage } from "@/features/staff";
 import { UsersPage } from "@/features/users";
 import { VendorsPage } from "@/features/vendors";
 import { BankPage } from "@/features/bank";
@@ -200,6 +202,14 @@ export const protectedAppRoutes: AppRoute[] = [
   {
     path: FEATURES.SERVICE_REQUEST.FEATURE_PATH,
     element: <ServiceRequestsPage />,
+  },
+  {
+    path: FEATURES.VIOLATIONS.FEATURE_PATH,
+    element: <ViolationsPage />,
+  },
+  {
+    path: `${FEATURES.VIOLATIONS.FEATURE_PATH}/:violationId`,
+    element: <ViolationsPage />,
   },
   {
     path: FEATURES.SERVICE_REQUEST_DETAIL.FEATURE_PATH,
@@ -457,13 +467,11 @@ export const protectedAppRoutes: AppRoute[] = [
   },
   {
     path: FEATURES.STAFF_ENTRY.FEATURE_PATH,
-    element: (
-      <ModulePlaceholder
-        moduleName="staff"
-        title="Domestic & Gate Staff"
-        description="Track security guard shift attendance and domestic staff passes."
-      />
-    ),
+    element: <StaffPage />,
+  },
+  {
+    path: FEATURES.STAFF_ATTENDANCE_REPORT.FEATURE_PATH,
+    element: <StaffAttendanceReportPage />,
   },
   {
     path: FEATURES.INCIDENTS.FEATURE_PATH,

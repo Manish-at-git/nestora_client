@@ -18,6 +18,7 @@ import { useGetWalletQuery } from "@/features/wallet/api/walletApi";
 import { formatDateTime } from "@/utils";
 import type { EventItem } from "../types";
 import { useBookEventPassMutation } from "../api/eventsApi";
+import { isEventCompleted } from "../utils/eventStatus";
 
 export function EventPassBookingModal({ event, onClose, onBooked }: {
   event: EventItem | null;
@@ -34,6 +35,7 @@ export function EventPassBookingModal({ event, onClose, onBooked }: {
   const limit = Math.min(event?.max_passes_per_user || 10, 50);
   const walletBalance = Number(wallet?.balance || 0);
   const hasEnoughBalance = walletBalance >= total;
+  const isCompleted = Boolean(event && isEventCompleted(event));
 
   useEffect(() => {
     setCount(1);
@@ -47,6 +49,11 @@ export function EventPassBookingModal({ event, onClose, onBooked }: {
 
   const submit = async () => {
     if (!event) return;
+    if (isEventCompleted(event)) {
+      toast.error("This event has completed. Passes can no longer be booked.");
+      onClose();
+      return;
+    }
     try {
       const result = await book({
         eventId: event.id,
@@ -78,7 +85,7 @@ export function EventPassBookingModal({ event, onClose, onBooked }: {
         : "Generate free pass"}
       submitIcon={<ArrowRight size={16} />}
       submitVariant="primary"
-      submitDisabled={total > 0 && (!wallet || (paymentMethod === "wallet" && (!hasEnoughBalance || !pin)))}
+      submitDisabled={isCompleted || (total > 0 && (!wallet || (paymentMethod === "wallet" && (!hasEnoughBalance || !pin))))}
       size="lg"
     >
       <div className="space-y-5">

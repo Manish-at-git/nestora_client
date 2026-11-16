@@ -43,6 +43,8 @@ export interface Invoice {
   status: InvoiceStatus;
   payment_date: string | null;
   payment_method: string | null;
+  is_third_party_upload?: boolean;
+  uploaded_file_url?: string | null;
 }
 
 export interface InvoicePaymentAccount {

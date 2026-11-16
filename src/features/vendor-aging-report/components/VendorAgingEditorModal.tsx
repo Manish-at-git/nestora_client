@@ -6,7 +6,9 @@ import { FormModal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useGetInvoiceVendorsQuery } from "@/features/invoices/api";
 import { formatApiErrorDetail } from "@/services/api/apiClient";
 import {
   useCreateVendorAgingReportMutation,
@@ -28,6 +30,7 @@ interface Props {
 
 interface EditorRow extends VendorAgingRowInput {
   key: string;
+  vendor_id: string;
 }
 
 const money = new Intl.NumberFormat("en-IN", {
@@ -62,6 +65,7 @@ const parsePeriodDate = (value?: string) => {
 
 const emptyRow = (): EditorRow => ({
   key: crypto.randomUUID(),
+  vendor_id: "",
   vendor_name: "",
   category: "",
   invoice_number: "",
@@ -92,6 +96,10 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
   const [error, setError] = useState("");
   const [createReport, createState] = useCreateVendorAgingReportMutation();
   const [updateReport, updateState] = useUpdateVendorAgingReportMutation();
+  const { data: vendors = [], isFetching: isLoadingVendors } = useGetInvoiceVendorsQuery(
+    associationId,
+    { skip: !isOpen || !associationId },
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -102,6 +110,7 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
       setRows(
         report.rows.map((row) => ({
           key: row.id,
+          vendor_id: "",
           vendor_name: row.vendor_name,
           category: row.category,
           invoice_number: row.invoice_number,
@@ -122,6 +131,21 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
     setError("");
     setActiveTab("invoices");
   }, [isOpen, report]);
+
+  useEffect(() => {
+    if (!vendors.length) return;
+    setRows((current) => {
+      let changed = false;
+      const next = current.map((row) => {
+        if (row.vendor_id) return row;
+        const vendor = vendors.find((item) => item.name === row.vendor_name);
+        if (!vendor) return row;
+        changed = true;
+        return { ...row, vendor_id: vendor.id };
+      });
+      return changed ? next : current;
+    });
+  }, [vendors]);
 
   const totals = useMemo(() => {
     let current = 0;
@@ -187,6 +211,17 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
     );
   };
 
+  const selectVendor = (key: string, vendorId: string) => {
+    const vendor = vendors.find((item) => item.id === vendorId);
+    if (!vendor) return;
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row,
+      vendor_id: vendor.id,
+      vendor_name: vendor.name,
+      category: row.category || vendor.service_type,
+    } : row));
+  };
+
   const validate = () => {
     if (!periodStart || !periodEnd || periodStart > periodEnd) {
       return "Choose a valid fiscal-period start and end date.";
@@ -194,6 +229,7 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
     if (!rows.length) return "Add at least one vendor invoice row.";
     for (const [index, row] of rows.entries()) {
       if (
+        !row.vendor_id ||
         !row.vendor_name.trim() ||
         !row.category.trim() ||
         !row.invoice_number.trim() ||
@@ -228,7 +264,7 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
     const payload: VendorAgingReportPayload = {
       association_id: associationId,
       fiscal_period: period,
-      rows: rows.map(({ key: _key, ...row }) => ({
+      rows: rows.map(({ key: _key, vendor_id: _vendorId, ...row }) => ({
         ...row,
         vendor_name: row.vendor_name.trim(),
         category: row.category.trim(),
@@ -370,11 +406,27 @@ export const VendorAgingEditorModal: React.FC<Props> = ({
                   key={row.key}
                   className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,.9fr)_minmax(0,1fr)_repeat(5,minmax(0,.8fr))_28px] items-center gap-2 [&>*]:min-w-0"
                 >
-                  <Input
-                    value={row.vendor_name}
-                    onChange={(event) => updateRow(row.key, "vendor_name", event.target.value)}
-                    placeholder="Vendor name"
-                    className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
+                  <Select
+                    value={row.vendor_id}
+                    onValueChange={(value) => selectVendor(row.key, value)}
+                    options={[
+                      {
+                        value: "",
+                        label: isLoadingVendors
+                          ? "Loading vendors..."
+                          : vendors.length
+                            ? "Select vendor..."
+                            : "No vendors registered",
+                        disabled: true,
+                      },
+                      ...vendors.map((vendor) => ({
+                        value: vendor.id,
+                        label: vendor.name,
+                      })),
+                    ]}
+                    disabled={isLoadingVendors || !vendors.length}
+                    size="sm"
+                    className="h-9 min-w-0 text-xs"
                   />
                   <Input
                     value={row.category}

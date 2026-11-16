@@ -32,6 +32,26 @@ export const associationsApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       transformResponse: (response: unknown) => unwrapApiData<AssociationStats>(response as AssociationStats),
+      providesTags: (_result, _error, id) => [{ type: "Associations", id }],
+    }),
+
+    uploadAssociationContract: builder.mutation<{ ok: boolean }, { id: string; file: File }>({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("contract_file", file);
+        return {
+          url: `/admin/associations/${id}/contract`,
+          method: "POST",
+          data: formData,
+          headers: { "Content-Type": "multipart/form-data" },
+        };
+      },
+      transformResponse: (response: unknown) =>
+        unwrapApiData<{ ok: boolean }>(response as { ok: boolean }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Associations", id },
+        { type: "Associations", id: "LIST" },
+      ],
     }),
 
     updateAssociationSubscription: builder.mutation<
@@ -73,6 +93,7 @@ export const associationsApi = baseApi.injectEndpoints({
 export const {
   useGetAssociationsQuery,
   useGetAssociationStatsQuery,
+  useUploadAssociationContractMutation,
   useUpdateAssociationSubscriptionMutation,
   useOnboardAssociationMutation,
 } = associationsApi;

@@ -26,6 +26,7 @@ export const DelinquencyReportImportModal: React.FC<Props> = ({
       reportName="Delinquency Report"
       initialPeriod={initialPeriod}
       templateEndpoint="/delinquency-reports/template"
+      templateParams={{ association_id: associationId }}
       templateFilename="delinquency_report_import_template.xlsx"
       columnsDescription="Include billed and collected totals, member, unit, charge, balance, and aging."
       isSubmitting={importState.isLoading}

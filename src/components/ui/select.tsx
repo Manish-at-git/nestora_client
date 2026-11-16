@@ -412,7 +412,7 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               position="popper"
               sideOffset={4}
               className={cn(
-                "z-50 min-w-[var(--radix-select-trigger-width)] w-[var(--radix-select-trigger-width)] max-h-72 overflow-hidden rounded-xl bg-white border border-slate-200/90 shadow-xl outline-none",
+                "z-50 min-w-[var(--radix-select-trigger-width)] w-max max-w-[28rem] max-h-72 overflow-hidden rounded-xl bg-white border border-slate-200/90 shadow-xl outline-none",
                 "duration-150 ease-out",
                 "data-[state=open]:animate-in data-[state=closed]:animate-out",
                 "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -503,9 +503,11 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                       </SelectItem>
                     ))
                   )
-                ) : options && normalizedOptions.length > 0 && searchable ? (
+                ) : options ? (
                   <div className="px-3 py-6 text-center text-xs text-slate-400">
-                    No options found
+                    {normalizedOptions.length > 0 && searchable
+                      ? "No options found"
+                      : "No options available"}
                   </div>
                 ) : (
                   children

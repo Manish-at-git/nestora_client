@@ -1,11 +1,13 @@
 import React from "react";
 import { CheckCircle2, Wallet } from "lucide-react";
 import { Account } from "@/types/auth";
+import type { ActiveViolationFine } from "@/features/violations/types";
 
 export interface DuesWidgetCardProps {
   account: Account | null;
   currencySymbol: string;
   isTenant?: boolean;
+  activeViolationFines?: ActiveViolationFine[];
   onPayDuesClick: () => void;
   getOrdinalSuffix?: (num: number) => string;
 }
@@ -19,22 +21,41 @@ const defaultGetOrdinalSuffix = (i: number) => {
   return i + "th";
 };
 
+const amountAsNumber = (value: number | string | null | undefined) => Number(value || 0);
+
+export const calculateOutstandingDues = (
+  account: Account | null,
+  activeViolationFines: ActiveViolationFine[] = [],
+) => {
+  const maintenanceDue = account?.assessment_paid_this_month
+    ? 0
+    : amountAsNumber(account?.assessment_amount);
+  const violationFineTotal = activeViolationFines.reduce(
+    (total, violation) => total + amountAsNumber(violation.fine_amount),
+    0,
+  );
+  const serverCalculatedTotal = amountAsNumber(account?.assessment_total_due);
+
+  // The server remains authoritative. The local sum keeps the dashboard current
+  // immediately after a homeowner accepts a fine, before their account refreshes.
+  return Math.max(serverCalculatedTotal, maintenanceDue + violationFineTotal);
+};
+
 export const DuesWidgetCard: React.FC<DuesWidgetCardProps> = ({
   account,
   currencySymbol,
   isTenant = false,
+  activeViolationFines = [],
   onPayDuesClick,
   getOrdinalSuffix = defaultGetOrdinalSuffix,
 }) => {
-  const isPaid = Boolean(account?.assessment_paid_this_month);
-  const baseAmount = account?.assessment_amount
-    ? parseFloat(String(account.assessment_amount)).toFixed(2)
-    : "0.00";
+  const hasActiveViolationFines = activeViolationFines.length > 0;
+  const maintenanceIsPaid = Boolean(account?.assessment_paid_this_month);
+  const isPaid = maintenanceIsPaid && !hasActiveViolationFines;
+  const baseAmount = (maintenanceIsPaid ? 0 : amountAsNumber(account?.assessment_amount)).toFixed(2);
   const fineAmount = parseFloat(String(account?.assessment_fine || "0")).toFixed(2);
   const hasFine = Number(account?.assessment_fine || 0) > 0;
-  const totalDue = account?.assessment_total_due
-    ? parseFloat(String(account.assessment_total_due)).toFixed(2)
-    : "0.00";
+  const totalDue = calculateOutstandingDues(account, activeViolationFines).toFixed(2);
 
   const frequencyLabel =
     account?.assessment_frequency === "Quarterly"
@@ -101,6 +122,29 @@ export const DuesWidgetCard: React.FC<DuesWidgetCardProps> = ({
             {isTenant ? "Pay Rent Now" : "Pay Dues via Wallet"}
           </button>
         </>
+      )}
+
+      {!isTenant && hasActiveViolationFines && (
+        <section className="mt-5 border-t border-rose-100 pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
+            Active violation fines
+          </p>
+          <div className="mt-2 space-y-2">
+            {activeViolationFines.map((violation) => (
+              <div key={violation.id} className="flex items-start justify-between gap-3 rounded-lg bg-rose-50 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-800">
+                    {violation.display_id} · {violation.title}
+                  </p>
+                  <p className="text-xs text-rose-700">Accepted and ready for payment</p>
+                </div>
+                <span className="shrink-0 font-mono text-sm font-semibold text-rose-700">
+                  {currencySymbol}{Number(violation.fine_amount).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

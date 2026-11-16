@@ -26,6 +26,7 @@ export const VendorAgingReportImportModal: React.FC<Props> = ({
       reportName="Vendor Aging Report"
       initialPeriod={initialPeriod}
       templateEndpoint="/vendor-aging-reports/template"
+      templateParams={{ association_id: associationId }}
       templateFilename="vendor_aging_report_import_template.xlsx"
       columnsDescription="Vendor, category, invoice, date, and each outstanding aging bucket."
       isSubmitting={importState.isLoading}

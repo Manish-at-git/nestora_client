@@ -6,8 +6,11 @@ import { FormModal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatApiErrorDetail } from "@/services/api/apiClient";
+import { useGetDelinquencyMembersQuery } from "@/features/delinquency-report/api";
+import type { DelinquencyMemberOption } from "@/features/delinquency-report/types";
 import {
   useCreatePrepaidReportMutation,
   useUpdatePrepaidReportMutation,
@@ -28,7 +31,16 @@ interface Props {
 
 interface EditorRow extends PrepaidReportRowInput {
   key: string;
+  member_id: string;
 }
+
+const CHARGE_CATEGORY_OPTIONS = [
+  "Maintenance",
+  "Late Fee",
+  "Special Assessment",
+  "Utilities",
+  "Other",
+];
 
 const money = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -64,6 +76,7 @@ const parsePeriodDate = (value?: string) => {
 
 const emptyRow = (): EditorRow => ({
   key: crypto.randomUUID(),
+  member_id: "",
   member_name: "",
   unit_number: "",
   block: "",
@@ -87,6 +100,10 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
   const [error, setError] = useState("");
   const [createReport, createState] = useCreatePrepaidReportMutation();
   const [updateReport, updateState] = useUpdatePrepaidReportMutation();
+  const { data: members = [], isFetching: isLoadingMembers } = useGetDelinquencyMembersQuery(
+    associationId,
+    { skip: !isOpen || !associationId },
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,6 +114,7 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
       setRows(
         report.rows.map((row) => ({
           key: row.id,
+          member_id: "",
           member_name: row.member_name,
           unit_number: row.unit_number,
           block: row.block || "",
@@ -115,6 +133,25 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
     setError("");
     setActiveTab("members");
   }, [isOpen, report]);
+
+  useEffect(() => {
+    if (!members.length) return;
+    setRows((current) => {
+      let changed = false;
+      const next = current.map((row) => {
+        if (row.member_id) return row;
+        const member = members.find((item) =>
+          item.name === row.member_name
+          && item.unit_number === row.unit_number
+          && (item.block || "") === (row.block || ""),
+        );
+        if (!member) return row;
+        changed = true;
+        return { ...row, member_id: member.user_id };
+      });
+      return changed ? next : current;
+    });
+  }, [members]);
 
   const totals = useMemo(() => {
     const prepaid = rows.reduce(
@@ -175,6 +212,43 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
     );
   };
 
+  const blockOptions = useMemo(
+    () => Array.from(new Set(
+      members.map((member) => member.block).filter((block): block is string => Boolean(block)),
+    )).sort(),
+    [members],
+  );
+
+  const unitOptions = (block: string) => Array.from(new Set(
+    members
+      .filter((member) => member.block === block)
+      .map((member) => member.unit_number)
+      .filter((unit): unit is string => Boolean(unit)),
+  )).sort();
+
+  const selectBlock = (key: string, block: string) => {
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row, block, unit_number: "", member_id: "", member_name: "",
+    } : row));
+  };
+
+  const selectUnit = (key: string, unitNumber: string) => {
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row, unit_number: unitNumber, member_id: "", member_name: "",
+    } : row));
+  };
+
+  const selectMember = (key: string, memberId: string) => {
+    const member = members.find((item) => item.user_id === memberId);
+    if (!member) return;
+    setRows((current) => current.map((row) => row.key === key ? {
+      ...row, member_id: member.user_id, member_name: member.name,
+    } : row));
+  };
+
+  const memberLabel = (member: DelinquencyMemberOption) =>
+    member.name;
+
   const validate = () => {
     if (!periodStart || !periodEnd || periodStart > periodEnd) {
       return "Choose a valid fiscal-period start and end date.";
@@ -184,6 +258,7 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
       const prepaid = Number(row.prepaid_amount);
       const used = Number(row.used_amount);
       if (
+        !row.member_id ||
         !row.member_name.trim() ||
         !row.unit_number.trim() ||
         !row.category.trim() ||
@@ -211,7 +286,7 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
     const payload: PrepaidReportPayload = {
       association_id: associationId,
       fiscal_period: period,
-      rows: rows.map(({ key: _key, ...row }) => ({
+      rows: rows.map(({ key: _key, member_id: _memberId, ...row }) => ({
         ...row,
         member_name: row.member_name.trim(),
         unit_number: row.unit_number.trim(),
@@ -250,6 +325,7 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
       title={report ? "Update Prepaid Report" : "Create Prepaid Report"}
       description="Manage association prepaid balances for one fiscal period"
       size="full"
+      className="sm:max-w-7xl"
       isSubmitting={createState.isLoading || updateState.isLoading}
       submitText="Save Prepaid Report"
       loadingText="Saving..."
@@ -311,7 +387,7 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
             <div>
               <h3 className="text-sm font-semibold text-slate-800">Member rows</h3>
               <p className="text-xs text-slate-500">
-                Available balance and status are calculated by the server.
+                Choose Block, then Unit, then a member. Available balance and status are calculated by the server.
               </p>
             </div>
             <Button
@@ -327,10 +403,10 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
 
           <div className="overflow-hidden">
             <div className="space-y-2">
-              <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,.8fr)_minmax(0,.7fr)_minmax(0,1fr)_minmax(0,.9fr)_minmax(0,.9fr)_minmax(0,.85fr)_minmax(0,.75fr)_minmax(0,.75fr)_28px] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                <span>Member name</span>
-                <span>Unit</span>
+              <div className="grid grid-cols-[minmax(0,.7fr)_minmax(0,.75fr)_minmax(0,1.7fr)_minmax(0,.9fr)_minmax(0,.72fr)_minmax(0,.65fr)_minmax(0,.8fr)_minmax(0,.75fr)_minmax(0,.7fr)_28px] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 <span>Block</span>
+                <span>Unit</span>
+                <span>Member</span>
                 <span>Category</span>
                 <span className="text-right">Prepaid</span>
                 <span className="text-right">Used</span>
@@ -342,31 +418,52 @@ export const PrepaidReportEditorModal: React.FC<Props> = ({
               {rows.map((row) => (
                 <div
                   key={row.key}
-                  className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,.8fr)_minmax(0,.7fr)_minmax(0,1fr)_minmax(0,.9fr)_minmax(0,.9fr)_minmax(0,.85fr)_minmax(0,.75fr)_minmax(0,.75fr)_28px] items-center gap-2 [&>*]:min-w-0"
+                  className="grid grid-cols-[minmax(0,.7fr)_minmax(0,.75fr)_minmax(0,1.7fr)_minmax(0,.9fr)_minmax(0,.72fr)_minmax(0,.65fr)_minmax(0,.8fr)_minmax(0,.75fr)_minmax(0,.7fr)_28px] items-center gap-2 [&>*]:min-w-0"
                 >
-                  <Input
-                    value={row.member_name}
-                    onChange={(event) => updateRow(row.key, "member_name", event.target.value)}
-                    className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
-                    placeholder="Member name"
-                  />
-                  <Input
-                    value={row.unit_number}
-                    onChange={(event) => updateRow(row.key, "unit_number", event.target.value)}
-                    className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
-                    placeholder="Unit"
-                  />
-                  <Input
+                  <Select
                     value={row.block || ""}
-                    onChange={(event) => updateRow(row.key, "block", event.target.value)}
-                    className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
                     placeholder="Block"
+                    onChange={(event) => selectBlock(row.key, event.target.value)}
+                    options={[
+                      { label: isLoadingMembers ? "Loading blocks..." : "Select block...", value: "" },
+                      ...blockOptions.map((block) => ({ label: block, value: block })),
+                    ]}
+                    disabled={isLoadingMembers}
+                    className="h-9 min-w-0 rounded-lg border-slate-200 px-2 text-sm"
                   />
-                  <Input
+                  <Select
+                    placeholder="Unit"
+                    value={row.unit_number}
+                    onChange={(event) => selectUnit(row.key, event.target.value)}
+                    options={[
+                      { label: row.block ? "Select unit..." : "Select block first", value: "" },
+                      ...unitOptions(row.block || "").map((unit) => ({ label: unit, value: unit })),
+                    ]}
+                    disabled={!row.block || isLoadingMembers}
+                    className="h-9 min-w-0 rounded-lg border-slate-200 px-2 text-sm"
+                  />
+                  <Select
+                    placeholder="Member"
+                    value={row.member_id}
+                    onChange={(event) => selectMember(row.key, event.target.value)}
+                    options={[
+                      { label: row.unit_number ? "Select member..." : "Select unit first", value: "" },
+                      ...members
+                        .filter((member) => member.block === row.block && member.unit_number === row.unit_number)
+                        .map((member) => ({ label: memberLabel(member), value: member.user_id })),
+                    ]}
+                    disabled={!row.unit_number || isLoadingMembers}
+                    className="h-9 min-w-0 rounded-lg border-slate-200 px-2 text-sm"
+                  />
+                  <Select
+                    placeholder="Category"
                     value={row.category}
                     onChange={(event) => updateRow(row.key, "category", event.target.value)}
-                    className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
-                    placeholder="Category"
+                    options={[
+                      { label: "Select category...", value: "" },
+                      ...CHARGE_CATEGORY_OPTIONS.map((category) => ({ label: category, value: category })),
+                    ]}
+                    className="h-9 min-w-0 rounded-lg border-slate-200 px-2 text-sm"
                   />
                   <Input
                     type="number"
