@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,10 @@ interface DiscussionThreadProps {
   isSending?: boolean;
   placeholder?: string;
   emptyMessage?: string;
+  attentionLabel?: string;
+  headerAction?: React.ReactNode;
+  className?: string;
+  readOnly?: boolean;
 }
 
 export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
@@ -36,41 +40,89 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
   isSending = false,
   placeholder = "Write a message",
   emptyMessage = "No messages yet. Send a message to start the conversation.",
-}) => (
-  <Card className="flex min-h-72 flex-col overflow-hidden">
-    <div className="border-b border-slate-200 px-4 py-3">
-      <div className="flex items-center gap-2">
-        <MessageSquare size={16} className="text-indigo-600" />
-        <h3 className="font-semibold text-slate-900">{title}</h3>
-      </div>
-      {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
-    </div>
-    <div className="min-h-44 flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-4">
-      {messages.length === 0 ? (
-        <div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center text-xs text-slate-400">
-          {emptyMessage}
+  attentionLabel,
+  headerAction,
+  className = "",
+  readOnly = false,
+}) => {
+  const messageListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+  }, [messages]);
+
+  return (
+    <Card className={`flex min-h-0 flex-col overflow-hidden ${className}`}>
+      <div className="border-b border-slate-200 bg-white px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare size={16} className="text-indigo-600" />
+            <h3 className="font-semibold text-slate-900">{title}</h3>
+          </div>
+          {headerAction || (attentionLabel && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-900">
+              {attentionLabel}
+            </span>
+          ))}
         </div>
-      ) : (
-        messages.map((message) => {
-          const isMine = message.senderId === currentUserId;
-          return (
-            <div key={message.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
-              <p className="mb-1 text-[11px] text-slate-500">
-                {isMine ? "You" : message.senderName || "Participant"}
-              </p>
-              <p className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${isMine ? "bg-slate-900 text-white" : "bg-white text-slate-800 shadow-xs"}`}>
-                {message.body}
-              </p>
-            </div>
-          );
-        })
+        {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
+      </div>
+
+      <div
+        ref={messageListRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-4"
+      >
+        {messages.length === 0 ? (
+          <div className="flex h-full min-h-36 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center text-xs text-slate-400">
+            {emptyMessage}
+          </div>
+        ) : (
+          messages.map((message) => {
+            const isMine = message.senderId === currentUserId;
+            return (
+              <div
+                key={message.id}
+                className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
+              >
+                <p className="mb-1 text-[11px] text-slate-500">
+                  {isMine ? "You" : message.senderName || "Participant"}
+                </p>
+                <p
+                  className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                    isMine
+                      ? "bg-slate-900 text-white"
+                      : "bg-white text-slate-800 shadow-xs"
+                  }`}
+                >
+                  {message.body}
+                </p>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {!readOnly && (
+        <div className="flex shrink-0 gap-2 border-t border-slate-200 bg-white p-3">
+          <Input
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                onSend();
+              }
+            }}
+          />
+          <Button size="icon" disabled={!value.trim() || isSending} onClick={onSend} title="Send message">
+            <Send size={16} />
+          </Button>
+        </div>
       )}
-    </div>
-    <div className="flex gap-2 border-t border-slate-200 bg-white p-3">
-      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); onSend(); } }} />
-      <Button size="icon" disabled={!value.trim() || isSending} onClick={onSend} title="Send message">
-        <Send size={16} />
-      </Button>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};

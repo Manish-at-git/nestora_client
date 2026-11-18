@@ -54,6 +54,7 @@ export const subscriptionsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: "SubscriptionPlans", id },
         { type: "SubscriptionPlans", id: "LIST" },
+        { type: "Associations", id: "LIST" },
       ],
     }),
 

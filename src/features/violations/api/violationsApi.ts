@@ -30,6 +30,9 @@ export const violationsApi = baseApi.injectEndpoints({
     respondToViolation: builder.mutation<void, { id: string; response: string }>(
       { query: ({ id, response }) => ({ url: `/violations/${id}/response`, method: "POST", data: { response } }), invalidatesTags: [{ type: "Violations", id: "LIST" }, { type: "Violations", id: "DUES" }] }
     ),
+    forceAcceptViolation: builder.mutation<void, string>(
+      { query: (id) => ({ url: `/violations/${id}/force-accept`, method: "PATCH" }), invalidatesTags: [{ type: "Violations", id: "LIST" }, { type: "Violations", id: "DUES" }] }
+    ),
     getViolationMessages: builder.query<ViolationMessage[], string>(
       { query: (id) => ({ url: `/violations/${id}/messages` }), transformResponse: (response: ApiResponse<ViolationMessage[]>) => response.data || [], providesTags: (_r, _e, id) => [{ type: "Violations", id: `MESSAGES_${id}` }] }
     ),
@@ -48,6 +51,7 @@ export const {
   useAdminReviewViolationMutation,
   useBoardDecideViolationMutation,
   useRespondToViolationMutation,
+  useForceAcceptViolationMutation,
   useGetViolationMessagesQuery,
   useSendViolationMessageMutation,
 } = violationsApi;

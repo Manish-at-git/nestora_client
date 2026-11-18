@@ -16,9 +16,10 @@ import { Select } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { DiscussionThread, EmptyState, LoadingSpinner, StatusPill } from "@/components/common";
-import { useAdminReviewViolationMutation, useBoardDecideViolationMutation, useGetViolationFineDefaultQuery, useGetViolationMessagesQuery, useGetViolationsQuery, useRespondToViolationMutation, useSendViolationMessageMutation } from "../api/violationsApi";
+import { useAdminReviewViolationMutation, useBoardDecideViolationMutation, useForceAcceptViolationMutation, useGetViolationFineDefaultQuery, useGetViolationMessagesQuery, useGetViolationsQuery, useRespondToViolationMutation, useSendViolationMessageMutation } from "../api/violationsApi";
 import { ViolationFormModal, ViolationTable } from "../components";
-import type { Violation } from "../types";
+import { useViolationDiscussionRealtime } from "../hooks/useViolationDiscussionRealtime";
+import type { Violation, ViolationMessage } from "../types";
 
 const responseOptions = ["Accept", "Discuss with Board", "Extension"];
 const adminViews = [
@@ -45,6 +46,8 @@ export const ViolationsPage: React.FC = () => {
   const { account } = useAuth();
   const role = account?.role_code;
   const isHomeowner = role === ROLE_CODE.HOMEOWNER;
+  const isCommitteeMember = role === ROLE_CODE.COMMITTEE_MEMBER;
+  const isResident = isHomeowner || isCommitteeMember;
   const isAdmin = role === ROLE_CODE.ADMIN || role === ROLE_CODE.SUPER_ADMIN;
   const isBoard = role === ROLE_CODE.BOARD_MEMBER;
   const activeAssociationId = useAppSelector(
@@ -58,7 +61,7 @@ export const ViolationsPage: React.FC = () => {
   const boardView: BoardViolationView = boardViews.some((view) => view.value === tab)
     ? tab as BoardViolationView
     : "pending_board";
-  const scope = isHomeowner ? homeownerView : isAdmin ? adminView : boardView;
+  const scope = isResident ? homeownerView : isAdmin ? adminView : boardView;
   const violationsUrl = searchParams.toString() ? `/violations?${searchParams.toString()}` : "/violations";
   const openViolation = (id: string) => navigate({
     pathname: `/violations/${id}`,
@@ -107,19 +110,19 @@ export const ViolationsPage: React.FC = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Violation | null>(null);
 
-  usePageHeader({ title: violationId ? "Violation Details" : "Violations", description: violationId ? "Review the complete violation record and available actions." : isHomeowner ? "Submit and track association violation reports." : "Review and resolve association violation reports." });
+  usePageHeader({ title: violationId ? "Violation Details" : "Violations", description: violationId ? "Review the complete violation record and available actions." : isResident ? "Submit and track association violation reports." : "Review and resolve association violation reports." });
 
-  if (!isHomeowner && !isAdmin && !isBoard) return <EmptyState icon={<ShieldAlert size={34} className="text-slate-400" />} title="Violations are not available" description="Your role is not permitted to access this workflow." />;
+  if (!isResident && !isAdmin && !isBoard) return <EmptyState icon={<ShieldAlert size={34} className="text-slate-400" />} title="Violations are not available" description="Your role is not permitted to access this workflow." />;
 
   if (violationId) {
     if (isDetailLoading) return <LoadingSpinner />;
     if (!detailViolation) return <EmptyState icon={<ShieldAlert size={34} className="text-slate-400" />} title="Violation not found" description="This report is unavailable or you do not have access to it." />;
-    if (isHomeowner) return <ViolationDetailDialog violation={detailViolation} canRespond onClose={() => navigate(violationsUrl)} onMutated={() => navigate(violationsUrl)} isHomeowner isAdmin={false} isBoard={false} />;
-    return <ViolationDetailPage violation={detailViolation} canRespond={isHomeowner || Boolean(detailViolation.is_current_user_violator)} isHomeowner={isHomeowner} isAdmin={isAdmin} isBoard={isBoard} onBack={() => navigate(violationsUrl)} />;
+    if (isResident) return <ViolationDetailDialog violation={detailViolation} canRespond onClose={() => navigate(violationsUrl)} onMutated={() => navigate(violationsUrl)} isHomeowner isAdmin={false} isBoard={false} />;
+    return <ViolationDetailPage violation={detailViolation} canRespond={isResident || Boolean(detailViolation.is_current_user_violator)} isHomeowner={isResident} isAdmin={isAdmin} isBoard={isBoard} onBack={() => navigate(violationsUrl)} />;
   }
 
   return <div className="space-y-6">
-    {isHomeowner && (
+    {isResident && (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs
           value={homeownerView}
@@ -162,7 +165,7 @@ export const ViolationsPage: React.FC = () => {
         <ViolationTable violations={violations} isLoading={isLoading} scope={scope} onView={(row) => openViolation(row.id)} />
       </>
     ) : (
-      <ViolationTable violations={violations} isLoading={isLoading} scope={scope} onView={(row) => isHomeowner ? setSelected(row) : openViolation(row.id)} />
+      <ViolationTable violations={violations} isLoading={isLoading} scope={scope} onView={(row) => isResident ? setSelected(row) : openViolation(row.id)} />
     )}
     <ViolationFormModal open={createOpen} onOpenChange={setCreateOpen} />
     {selected && <ViolationDetailDialog violation={selected} canRespond={homeownerView === "against_me"} isHomeowner onClose={() => setSelected(null)} onMutated={() => { setSelected(null); refetch(); }} isAdmin={false} isBoard={false} />}
@@ -181,8 +184,8 @@ const ViolationDetailPage: React.FC<{
   const [adminReview, { isLoading: reviewing }] = useAdminReviewViolationMutation();
   const [boardDecision, { isLoading: deciding }] = useBoardDecideViolationMutation();
   const [respond, { isLoading: responding }] = useRespondToViolationMutation();
+  const [forceAccept, { isLoading: isForceAccepting }] = useForceAcceptViolationMutation();
   const [sendMessage] = useSendViolationMessageMutation();
-  const { data: messages = [] } = useGetViolationMessagesQuery(violation.id, { skip: !isBoard });
   const [notes, setNotes] = useState("");
   const [action, setAction] = useState("Fine");
   const [offenseCount, setOffenseCount] = useState("1");
@@ -190,7 +193,20 @@ const ViolationDetailPage: React.FC<{
   const [hasSetDefaultFine, setHasSetDefaultFine] = useState(false);
   const [response, setResponse] = useState("");
   const [message, setMessage] = useState("");
+  const [discussionRequested, setDiscussionRequested] = useState(
+    violation.violator_response === "Discuss with Board"
+  );
+  const [discussionResolved, setDiscussionResolved] = useState(
+    violation.violator_response === "Accept"
+  );
   const responseAllowed = canRespond && violation.status === "Approved" && violation.action === "Fine" && !violation.violator_response;
+  const isDiscussionOpen = !discussionResolved && (
+    discussionRequested || violation.violator_response === "Discuss with Board"
+  );
+  const canViewDiscussion = (isDiscussionOpen || discussionResolved || violation.violator_response === "Accept")
+    && (isBoard || (isHomeowner && violation.is_current_user_violator));
+  const { data: messages = [] } = useGetViolationMessagesQuery(violation.id, { skip: !canViewDiscussion });
+  useViolationDiscussionRealtime(violation.id, isDiscussionOpen && canViewDiscussion);
   const { data: fineDefault } = useGetViolationFineDefaultQuery(violation.id, {
     skip: !isAdmin || violation.status !== "New" || action !== "Fine",
   });
@@ -223,6 +239,10 @@ const ViolationDetailPage: React.FC<{
     try {
       await respond({ id: violation.id, response }).unwrap();
       toast.success("Response recorded.");
+      if (response === "Discuss with Board") {
+        setDiscussionRequested(true);
+        return;
+      }
       onBack();
     } catch {
       toast.error("Unable to record the response.");
@@ -235,6 +255,27 @@ const ViolationDetailPage: React.FC<{
       setMessage("");
     } catch {
       toast.error("Unable to send the message.");
+    }
+  };
+  const resolveWithForceAccept = async () => {
+    try {
+      await forceAccept(violation.id).unwrap();
+      toast.success("Violation force accepted. The fine is now included in dues.");
+      setDiscussionResolved(true);
+      setMessage("");
+    } catch {
+      toast.error("Unable to force accept this violation.");
+    }
+  };
+  const acceptAfterDiscussion = async () => {
+    try {
+      await respond({ id: violation.id, response: "Accept" }).unwrap();
+      toast.success("Violation accepted. The fine is now included in dues.");
+      setDiscussionRequested(false);
+      setDiscussionResolved(true);
+      setMessage("");
+    } catch {
+      toast.error("Unable to accept this violation.");
     }
   };
 
@@ -258,9 +299,10 @@ const ViolationDetailPage: React.FC<{
 
       {isHomeowner && <HomeownerViolationDetails violation={violation} />}
       {isAdmin && <AdminViolationDetails violation={violation} canReview={violation.status === "New"} action={action} onActionChange={setAction} offenseCount={offenseCount} onOffenseCountChange={setOffenseCount} fine={fine} onFineChange={setFine} notes={notes} onNotesChange={setNotes} isReviewing={reviewing} onForward={() => review("Pending Board")} onReject={() => review("Rejected")} />}
-      {isBoard && <BoardViolationDetails violation={violation} canDecide={!violation.is_current_user_violator} notes={notes} onNotesChange={setNotes} isDeciding={deciding} onApprove={() => decide("Approved")} onReject={() => decide("Rejected")} />}
+      {isBoard && <BoardViolationDetails violation={violation} canDecide={!violation.is_current_user_violator} notes={notes} onNotesChange={setNotes} isDeciding={deciding} onApprove={() => decide("Approved")} onReject={() => decide("Rejected")} canForceAccept={isDiscussionOpen && violation.action === "Fine"} isForceAccepting={isForceAccepting} onForceAccept={resolveWithForceAccept} discussion={canViewDiscussion ? <ViolationDiscussion isBoard readOnly={!isDiscussionOpen} messages={messages} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} canForceAccept={isDiscussionOpen && violation.action === "Fine"} isForceAccepting={isForceAccepting} onForceAccept={resolveWithForceAccept} /> : undefined} />}
       {responseAllowed && <Card className="space-y-3 p-4"><h3 className="font-semibold">Your response</h3><Select value={response} onValueChange={setResponse} options={responseOptions} placeholder="Choose one response" /><Button disabled={!response || responding} onClick={submitResponse}>Submit response</Button></Card>}
-      {isBoard && <DiscussionThread title="Board & violator chat" description="Communicate directly with the violator regarding their response or extension request." messages={messages.map((item) => ({ id: item.id, senderId: item.sender_account_id, senderName: item.sender_name, body: item.body, createdAt: item.created_at }))} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} placeholder="Type your response to the violator…" />}
+      {isHomeowner && canViewDiscussion && <><HomeownerDiscussionStatus resolved={!isDiscussionOpen} /><ViolationDiscussion readOnly={!isDiscussionOpen} messages={messages} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} canAccept={isDiscussionOpen && violation.violator_response === "Discuss with Board"} isAccepting={responding} onAccept={acceptAfterDiscussion} /></>}
+      {!isBoard && !isHomeowner && canViewDiscussion && <ViolationDiscussion readOnly={!isDiscussionOpen} messages={messages} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} />}
     </div>
   );
 };
@@ -270,15 +312,28 @@ const ViolationDetailDialog: React.FC<{ violation: Violation; canRespond: boolea
   const [adminReview, { isLoading: reviewing }] = useAdminReviewViolationMutation();
   const [boardDecision, { isLoading: deciding }] = useBoardDecideViolationMutation();
   const [respond, { isLoading: responding }] = useRespondToViolationMutation();
+  const [forceAccept, { isLoading: isForceAccepting }] = useForceAcceptViolationMutation();
   const [sendMessage] = useSendViolationMessageMutation();
-  const { data: messages = [] } = useGetViolationMessagesQuery(violation.id, { skip: !isBoard });
   const [notes, setNotes] = useState("");
   const [action, setAction] = useState("Fine");
   const [offenseCount, setOffenseCount] = useState("1");
   const [fine, setFine] = useState("");
   const [response, setResponse] = useState("");
   const [message, setMessage] = useState("");
+  const [discussionRequested, setDiscussionRequested] = useState(
+    violation.violator_response === "Discuss with Board"
+  );
+  const [discussionResolved, setDiscussionResolved] = useState(
+    violation.violator_response === "Accept"
+  );
   const responseAllowed = canRespond && violation.status === "Approved" && violation.action === "Fine" && !violation.violator_response;
+  const isDiscussionOpen = !discussionResolved && (
+    discussionRequested || violation.violator_response === "Discuss with Board"
+  );
+  const canViewDiscussion = (isDiscussionOpen || discussionResolved || violation.violator_response === "Accept")
+    && (isBoard || (isHomeowner && violation.is_current_user_violator));
+  const { data: messages = [] } = useGetViolationMessagesQuery(violation.id, { skip: !canViewDiscussion });
+  useViolationDiscussionRealtime(violation.id, isDiscussionOpen && canViewDiscussion);
 
   const review = async (outcome: "Pending Board" | "Rejected" | "Dismissed") => {
     try { await adminReview({ id: violation.id, data: { offense_count: Number(offenseCount), action, fine_amount: action === "Fine" ? Number(fine) : undefined, admin_notes: notes || undefined, outcome } }).unwrap(); toast.success("Violation review saved."); onMutated(); } catch { toast.error(action === "Fine" && !fine ? "Enter a fine amount." : "Unable to save the review."); }
@@ -286,18 +341,121 @@ const ViolationDetailDialog: React.FC<{ violation: Violation; canRespond: boolea
   const decide = async (outcome: "Approved" | "Rejected") => {
     try { await boardDecision({ id: violation.id, data: { outcome, board_notes: notes || undefined } }).unwrap(); toast.success("Board decision saved."); onMutated(); } catch { toast.error("Unable to save the board decision."); }
   };
-  const submitResponse = async () => { try { await respond({ id: violation.id, response }).unwrap(); toast.success("Response recorded."); onMutated(); } catch { toast.error("Unable to record the response."); } };
+  const submitResponse = async () => { try { await respond({ id: violation.id, response }).unwrap(); toast.success("Response recorded."); if (response === "Discuss with Board") { setDiscussionRequested(true); return; } onMutated(); } catch { toast.error("Unable to record the response."); } };
   const submitMessage = async () => { if (!message.trim()) return; try { await sendMessage({ id: violation.id, body: message.trim() }).unwrap(); setMessage(""); } catch { toast.error("Unable to send the message."); } };
+  const resolveWithForceAccept = async () => { try { await forceAccept(violation.id).unwrap(); toast.success("Violation force accepted. The fine is now included in dues."); setDiscussionResolved(true); setMessage(""); } catch { toast.error("Unable to force accept this violation."); } };
+  const acceptAfterDiscussion = async () => { try { await respond({ id: violation.id, response: "Accept" }).unwrap(); toast.success("Violation accepted. The fine is now included in dues."); setDiscussionRequested(false); setDiscussionResolved(true); setMessage(""); } catch { toast.error("Unable to accept this violation."); } };
 
   return <Dialog open onOpenChange={(open) => !open && onClose()}><DialogContent className={`${isBoard ? "max-w-5xl" : "max-w-2xl"} max-h-[90vh] overflow-y-auto`}><DialogHeader><DialogTitle className="flex items-center gap-2">{isHomeowner || isBoard ? <><span className="rounded-md bg-rose-50 px-2 py-1 font-mono text-sm font-bold text-rose-600">{violation.display_id}</span><span>{isBoard ? violation.title : "Violation Report Details"}</span></> : <>{violation.display_id} · {violation.title}</>}</DialogTitle><DialogDescription>{violation.category} · {violation.status}</DialogDescription></DialogHeader>
     <div className="space-y-4 text-sm">{isHomeowner ? <HomeownerViolationDetails violation={violation} /> : !isAdmin && !isBoard ? <Card className="p-4 space-y-2"><p className="whitespace-pre-wrap text-slate-700">{violation.description}</p>{violation.proof_url && <a className="text-blue-600 underline" href={violation.proof_url} target="_blank" rel="noreferrer">Open submitted proof</a>}<div className="grid grid-cols-2 gap-2 text-slate-500">{violation.offense_count && <span>Offense {violation.offense_count}</span>}{violation.fine_amount && <span>Fine: ₹{violation.fine_amount}</span>}{violation.violator_response && <span>Response: {violation.violator_response}</span>}</div></Card> : null}
       {isAdmin && violation.status === "New" && <div className="grid gap-4 lg:grid-cols-2"><Card className="space-y-4 bg-slate-50 p-4"><h3 className="border-b border-slate-200 pb-3 font-semibold text-slate-900">Violation incident details</h3><DetailItem label="Reporter homeowner" value={`${violation.reporter_name || "Homeowner"}${violation.reporter_unit_number ? ` · Unit ${violation.reporter_unit_number}` : ""}`} /><DetailItem label="Target homeowner" value={violation.knows_violator ? `${violation.violator_name || "Homeowner"}${violation.violator_unit_number ? ` · Unit ${violation.violator_unit_number}` : ""}` : "Not identified"} /><DetailItem label="Description" value={violation.description} boxed />{violation.proof_url && <section className="space-y-2"><p className="text-xs text-slate-500">Uploaded picture proof</p><a href={resolveMediaUrl(violation.proof_url)} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 bg-white"><img src={resolveMediaUrl(violation.proof_url)} alt="Submitted violation proof" className="max-h-48 w-full object-contain" /><span className="block bg-slate-100 px-3 py-2 text-center text-xs font-semibold text-indigo-600">View original picture ↗</span></a></section>}</Card><Card className="space-y-3 border-rose-200 bg-rose-50/30 p-4"><h3 className="border-b border-rose-200 pb-3 font-semibold text-slate-900">Admin verification & fine setup</h3><Select label="Violation type" value={violation.category} options={[violation.category]} disabled /><Select label="Violation count" value={offenseCount} onValueChange={setOffenseCount} options={[{ value: "1", label: "1st offense" }, { value: "2", label: "2nd offense" }, { value: "3", label: "3rd offense" }]} /><Select label="Action" required value={action} onValueChange={setAction} options={["Fine", "Waive Off"]} />{action === "Fine" && <Input label="Violation fine amount (₹)" type="number" min="1" value={fine} onChange={(event) => setFine(event.target.value)} />}<Textarea label="Admin verification notes" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Verified against association rules…" /><div className="flex flex-wrap gap-2"><Button className="flex-1" disabled={reviewing} onClick={() => review("Pending Board")}>Approve & forward to board</Button><Button variant="outline" disabled={reviewing} onClick={() => review("Rejected")}>Reject</Button><Button variant="outline" disabled={reviewing} onClick={() => review("Dismissed")}>Dismiss</Button></div></Card></div>}
-      {isBoard && <BoardViolationDetails violation={violation} canDecide={!violation.is_current_user_violator} notes={notes} onNotesChange={setNotes} isDeciding={deciding} onApprove={() => decide("Approved")} onReject={() => decide("Rejected")} />}
+      {isBoard && <BoardViolationDetails violation={violation} canDecide={!violation.is_current_user_violator} notes={notes} onNotesChange={setNotes} isDeciding={deciding} onApprove={() => decide("Approved")} onReject={() => decide("Rejected")} canForceAccept={isDiscussionOpen && violation.action === "Fine"} isForceAccepting={isForceAccepting} onForceAccept={resolveWithForceAccept} discussion={canViewDiscussion ? <ViolationDiscussion isBoard readOnly={!isDiscussionOpen} messages={messages} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} canForceAccept={isDiscussionOpen && violation.action === "Fine"} isForceAccepting={isForceAccepting} onForceAccept={resolveWithForceAccept} /> : undefined} />}
       {responseAllowed && <Card className="p-4 space-y-3"><h3 className="font-semibold">Your response</h3><Select value={response} onValueChange={setResponse} options={responseOptions} placeholder="Choose one response" /><Button disabled={!response || responding} onClick={submitResponse}>Submit response</Button></Card>}
-      {isBoard && <DiscussionThread title="Board & violator chat" description="Communicate directly with the violator regarding their response or extension request." messages={messages.map((item) => ({ id: item.id, senderId: item.sender_account_id, senderName: item.sender_name, body: item.body, createdAt: item.created_at }))} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} placeholder="Type your response to the violator…" />}
+      {isHomeowner && canViewDiscussion && <><HomeownerDiscussionStatus resolved={!isDiscussionOpen} /><ViolationDiscussion readOnly={!isDiscussionOpen} messages={messages} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} canAccept={isDiscussionOpen && violation.violator_response === "Discuss with Board"} isAccepting={responding} onAccept={acceptAfterDiscussion} /></>}
+      {!isBoard && !isHomeowner && canViewDiscussion && <ViolationDiscussion readOnly={!isDiscussionOpen} messages={messages} currentUserId={account?.id || account?.account_id} value={message} onChange={setMessage} onSend={submitMessage} />}
     </div><DialogFooter><Button variant="outline" onClick={onClose}>Close</Button></DialogFooter>
   </DialogContent></Dialog>;
 };
+
+const HomeownerDiscussionStatus: React.FC<{ resolved?: boolean }> = ({ resolved = false }) => (
+  <Card className="border-indigo-200 bg-indigo-50/40 p-4">
+    <p className="text-sm font-semibold text-indigo-950">
+      {resolved ? "Discussion closed" : "Discussion active"}
+    </p>
+    <p className="mt-1 text-xs leading-relaxed text-indigo-800">
+      {resolved
+        ? "This conversation is retained as a record because the violation has been accepted."
+        : "Your discussion with the Board is open. You will receive a notification when the Board replies."}
+    </p>
+  </Card>
+);
+
+const ViolationDiscussion: React.FC<{
+  isBoard?: boolean;
+  messages: ViolationMessage[];
+  currentUserId?: string | null;
+  value: string;
+  onChange: (value: string) => void;
+  onSend: () => void;
+  canForceAccept?: boolean;
+  isForceAccepting?: boolean;
+  onForceAccept?: () => void;
+  canAccept?: boolean;
+  isAccepting?: boolean;
+  onAccept?: () => void;
+  readOnly?: boolean;
+}> = ({
+  isBoard = false,
+  messages,
+  currentUserId,
+  value,
+  onChange,
+  onSend,
+  canForceAccept = false,
+  isForceAccepting = false,
+  onForceAccept,
+  canAccept = false,
+  isAccepting = false,
+  onAccept,
+  readOnly = false,
+}) => (
+  <DiscussionThread
+    title={isBoard ? "Board & homeowner discussion" : "Discussion with Board"}
+    description={isBoard
+      ? readOnly
+        ? "This discussion is retained as a record after resolution."
+        : "Respond to the homeowner before resolving this violation."
+      : readOnly
+        ? "This discussion is retained as a record after resolution."
+        : "Discuss this violation directly with the Board."
+    }
+    headerAction={isBoard ? (
+      <div className="flex items-center gap-2">
+        <span className="hidden rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-900 sm:inline">
+          {readOnly ? "Discussion closed" : "Needs your attention"}
+        </span>
+        {canForceAccept && onForceAccept && (
+          <Button
+            size="sm"
+            disabled={isForceAccepting}
+            onClick={onForceAccept}
+          >
+            {isForceAccepting ? "Force accepting…" : "Force accept & close"}
+          </Button>
+        )}
+      </div>
+    ) : (
+      <div className="flex items-center gap-2">
+        <span className="hidden rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-900 sm:inline">
+          {readOnly ? "Discussion closed" : "Discussion active"}
+        </span>
+        {canAccept && onAccept && (
+          <Button
+            size="sm"
+            disabled={isAccepting}
+            onClick={onAccept}
+          >
+            {isAccepting ? "Accepting…" : "Accept violation"}
+          </Button>
+        )}
+      </div>
+    )}
+    className={isBoard ? "h-[28rem] self-start lg:h-[39rem]" : "h-[28rem] self-start"}
+    messages={messages.map((item) => ({
+      id: item.id,
+      senderId: item.sender_account_id,
+      senderName: item.sender_name,
+      body: item.body,
+      createdAt: item.created_at,
+    }))}
+    currentUserId={currentUserId}
+    value={value}
+    onChange={onChange}
+    onSend={onSend}
+    placeholder={isBoard ? "Reply to the homeowner…" : "Message the Board…"}
+    readOnly={readOnly}
+  />
+);
 
 const HomeownerViolationDetails: React.FC<{ violation: Violation }> = ({ violation }) => (
   <>
@@ -449,54 +607,146 @@ const BoardViolationDetails: React.FC<{
   isDeciding: boolean;
   onApprove: () => void;
   onReject: () => void;
-}> = ({ violation, canDecide, notes, onNotesChange, isDeciding, onApprove, onReject }) => (
-  <div className="grid gap-4 lg:grid-cols-[1.7fr_1fr]">
-    <Card className="space-y-4 bg-slate-50 p-4">
-      <h3 className="border-b border-slate-200 pb-3 font-semibold text-slate-900">
-        Violation & admin review overview
-      </h3>
-      <DetailItem
-        label="Reporter (confidential)"
-        value={`${violation.reporter_name || "Homeowner"}${violation.reporter_unit_number ? ` · Unit ${violation.reporter_unit_number}` : ""}`}
-      />
-      <DetailItem
-        label="Target violator"
-        value={violation.knows_violator ? `${violation.violator_name || "Homeowner"}${violation.violator_unit_number ? ` · Unit ${violation.violator_unit_number}` : ""}` : "Not identified"}
-      />
-      <DetailItem label="Incident description" value={violation.description} boxed />
-      {violation.proof_url && (
-        <section className="space-y-2">
-          <p className="text-xs text-slate-500">Picture proof</p>
-          <a href={resolveMediaUrl(violation.proof_url)} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <img src={resolveMediaUrl(violation.proof_url)} alt="Submitted violation proof" className="max-h-48 w-full object-contain" />
-            <span className="block bg-slate-100 px-3 py-2 text-center text-xs font-semibold text-indigo-600">View full-size picture ↗</span>
-          </a>
-        </section>
+  canForceAccept: boolean;
+  isForceAccepting: boolean;
+  onForceAccept: () => void;
+  discussion?: React.ReactNode;
+}> = ({
+  violation,
+  canDecide,
+  notes,
+  onNotesChange,
+  isDeciding,
+  onApprove,
+  onReject,
+  canForceAccept,
+  isForceAccepting,
+  onForceAccept,
+  discussion,
+}) => (
+  <>
+    <div className="grid items-stretch gap-4 lg:grid-cols-[1.7fr_1fr]">
+      <Card className="space-y-4 bg-slate-50 p-4">
+        <h3 className="border-b border-slate-200 pb-3 font-semibold text-slate-900">
+          Violation & admin review overview
+        </h3>
+        <DetailItem
+          label="Reporter (confidential)"
+          value={`${violation.reporter_name || "Homeowner"}${violation.reporter_unit_number ? ` · Unit ${violation.reporter_unit_number}` : ""}`}
+        />
+        <DetailItem
+          label="Target violator"
+          value={violation.knows_violator ? `${violation.violator_name || "Homeowner"}${violation.violator_unit_number ? ` · Unit ${violation.violator_unit_number}` : ""}` : "Not identified"}
+        />
+        <DetailItem label="Incident description" value={violation.description} boxed />
+        {violation.proof_url && (
+          <section className="space-y-2">
+            <p className="text-xs text-slate-500">Picture proof</p>
+            <a href={resolveMediaUrl(violation.proof_url)} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <img src={resolveMediaUrl(violation.proof_url)} alt="Submitted violation proof" className="max-h-48 w-full object-contain" />
+              <span className="block bg-slate-100 px-3 py-2 text-center text-xs font-semibold text-indigo-600">View full-size picture ↗</span>
+            </a>
+          </section>
+        )}
+        {violation.admin_notes && <DetailItem label="Admin review remarks" value={violation.admin_notes} boxed />}
+      </Card>
+
+      {discussion || (
+        <BoardApprovalAction
+          violation={violation}
+          canDecide={canDecide}
+          notes={notes}
+          onNotesChange={onNotesChange}
+          isDeciding={isDeciding}
+          onApprove={onApprove}
+          onReject={onReject}
+          canForceAccept={canForceAccept}
+          isForceAccepting={isForceAccepting}
+          onForceAccept={onForceAccept}
+        />
       )}
-      {violation.admin_notes && <DetailItem label="Admin review remarks" value={violation.admin_notes} boxed />}
-    </Card>
-    <Card className="flex h-full flex-col border-indigo-200 bg-indigo-50/30 p-4">
-      <div>
-        <h3 className="font-semibold text-slate-900">Board approval action</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-600">Approving marks this violation as approved and notifies the reported homeowner.</p>
+    </div>
+
+    {discussion && (
+      <BoardApprovalAction
+        violation={violation}
+        canDecide={canDecide}
+        notes={notes}
+        onNotesChange={onNotesChange}
+        isDeciding={isDeciding}
+        onApprove={onApprove}
+        onReject={onReject}
+        canForceAccept={canForceAccept}
+        isForceAccepting={isForceAccepting}
+        onForceAccept={onForceAccept}
+        showForceAccept={false}
+      />
+    )}
+  </>
+);
+
+const BoardApprovalAction: React.FC<{
+  violation: Violation;
+  canDecide: boolean;
+  notes: string;
+  onNotesChange: (value: string) => void;
+  isDeciding: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+  canForceAccept: boolean;
+  isForceAccepting: boolean;
+  onForceAccept: () => void;
+  showForceAccept?: boolean;
+}> = ({
+  violation,
+  canDecide,
+  notes,
+  onNotesChange,
+  isDeciding,
+  onApprove,
+  onReject,
+  canForceAccept,
+  isForceAccepting,
+  onForceAccept,
+  showForceAccept = true,
+}) => (
+  <Card className="flex min-h-48 flex-col border-indigo-200 bg-indigo-50/30 p-4 lg:min-h-[17rem]">
+    <div>
+      <h3 className="font-semibold text-slate-900">Board approval action</h3>
+      <p className="mt-1 text-xs leading-relaxed text-slate-600">
+        Approving marks this violation as approved and notifies the reported homeowner.
+      </p>
+    </div>
+    {!canDecide ? (
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-relaxed text-amber-900">
+        This report is against you. Another Board Member must make the decision.
       </div>
-      {!canDecide ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-relaxed text-amber-900">
-          This report is against you. Another Board Member must make the decision.
+    ) : violation.status === "Pending Board" ? (
+      <>
+        <div className="pt-4">
+          <Textarea label="Board notes / decision remarks" value={notes} onChange={(event) => onNotesChange(event.target.value)} placeholder="Enter remarks for the board decision…" />
         </div>
-      ) : violation.status === "Pending Board" ? <>
-          <div className="pt-4">
-            <Textarea label="Board notes / decision remarks" value={notes} onChange={(event) => onNotesChange(event.target.value)} placeholder="Enter remarks for the board decision…" />
-          </div>
-          <div className="mt-auto flex gap-2 border-t border-indigo-200 pt-6">
-            <Button className="flex-1" disabled={isDeciding} onClick={onApprove}>Approve violation</Button>
-            <Button variant="outline" disabled={isDeciding} onClick={onReject}>Reject</Button>
-          </div>
-        </> : (
+        <div className="mt-auto flex gap-2 border-t border-indigo-200 pt-6">
+          <Button className="flex-1" disabled={isDeciding} onClick={onApprove}>Approve violation</Button>
+          <Button variant="outline" disabled={isDeciding} onClick={onReject}>Reject</Button>
+        </div>
+      </>
+    ) : (
+      <div className="space-y-4 pt-4">
         <DetailItem label="Board decision" value={violation.status} boxed />
-      )}
-    </Card>
-  </div>
+        {canForceAccept && showForceAccept && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs leading-relaxed text-amber-900">
+              The homeowner requested a discussion. Force accepting resolves the violation and adds its fine to their dues.
+            </p>
+            <Button className="mt-3 w-full" disabled={isForceAccepting} onClick={onForceAccept}>
+              {isForceAccepting ? "Force accepting…" : "Force accept & close"}
+            </Button>
+          </div>
+        )}
+      </div>
+    )}
+  </Card>
 );
 
 const DetailItem: React.FC<{ label: string; value: string; boxed?: boolean }> = ({ label, value, boxed = false }) => (

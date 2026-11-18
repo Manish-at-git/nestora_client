@@ -3,11 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, KeyRound, Send, Building2 } from "lucide-react";
 import { CodeInput } from "../components/CodeInput";
+import { AuthVisualPanel } from "../components/AuthVisualPanel";
 import { useLoginCodeMutation, useRequestCodeMutation } from "../api/authApi";
 import { formatApiErrorDetail } from "@/services/api/apiClient";
-
-const IMG =
-  "https://images.unsplash.com/photo-1707857858965-03a0f42dd053?w=1600&q=80";
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,35 +13,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="split-screen bg-bg">
-      {/* Left visual pane */}
-      <aside className="split-visual" aria-hidden>
-        <img src={IMG} alt="" />
-        <div className="content">
-          <div className="flex items-center gap-3 text-white/90">
-            <div className="w-9 h-9 rounded-full bg-white/12 border border-white/25 backdrop-blur flex items-center justify-center">
-              <Building2 size={18} />
-            </div>
-            <span className="font-display italic text-xl">Nestora</span>
-          </div>
-          <div className="space-y-4 max-w-md">
-            <p className="uppercase tracking-[0.3em] text-xs text-white/60">
-              Association Portal · v1
-            </p>
-            <h1 className="font-display italic text-5xl leading-[1.05] text-white">
-              A quiet place<br />for the people<br />who make yours.
-            </h1>
-            <p className="text-white/70 text-[15px] leading-relaxed max-w-sm">
-              Nestora is the private space where your association's members
-              stay in the loop — with dignity, warmth, and a little more
-              elegance than a group chat.
-            </p>
-          </div>
-          <div className="text-white/50 text-xs font-mono">
-            © {new Date().getFullYear()} · A Membership OS
-          </div>
-        </div>
-        <div className="vertical-word">nestora.</div>
-      </aside>
+      <AuthVisualPanel />
 
       {/* Right form pane */}
       <section className="flex items-center justify-center px-4 sm:px-6 lg:px-12 py-8 sm:py-16">
